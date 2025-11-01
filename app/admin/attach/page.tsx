@@ -52,42 +52,35 @@ const sampleSpec: PcSpec = {
   Scan_Time: "2025-11-01T13:53:16.784566",
 };
 
-export default function AdminDashboard() {
+export default function AttachListing() {
   const [images, setImages] = useState<string[]>([]);
   const [guaranteeMonths, setGuaranteeMonths] = useState<number>(12);
   const [guaranteeProvider, setGuaranteeProvider] =
     useState<string>("PCSmartSpec");
   const [publishReady, setPublishReady] = useState<boolean>(false);
-
-  const totalStorageGB = useMemo(
-    () => sampleSpec.Storage.reduce((sum, s) => sum + s.Size_GB, 0),
+  const [title, setTitle] = useState<string>(
+    `${sampleSpec.Brand} ${sampleSpec.Model}`
+  );
+  const [price, setPrice] = useState<number>(799);
+  const [condition, setCondition] = useState<string>("New");
+  const [specialFeatures, setSpecialFeatures] = useState<string[]>([]);
+  const [specialInput, setSpecialInput] = useState<string>("");
+  const suggestions = useMemo(
+    () => [
+      "Backlit Keyboard",
+      "RTX 2050 GPU",
+      "NVMe SSD",
+      "16GB DDR4 3200MHz",
+      "1080p 144Hz",
+      "Windows 11 Home",
+      "USB-C",
+      "Wi‑Fi 6",
+    ],
     []
   );
 
-  const mockSold = useMemo(
-    () => [
-      {
-        id: "ORD-1001",
-        model: sampleSpec.Model,
-        price: 799,
-        buyer: "A. Bekele",
-        date: "2025-10-12",
-      },
-      {
-        id: "ORD-1002",
-        model: sampleSpec.Model,
-        price: 789,
-        buyer: "M. Yusuf",
-        date: "2025-10-24",
-      },
-      {
-        id: "ORD-1003",
-        model: "HP 255 G8",
-        price: 550,
-        buyer: "S. Hailu",
-        date: "2025-11-01",
-      },
-    ],
+  const totalStorageGB = useMemo(
+    () => sampleSpec.Storage.reduce((sum, s) => sum + s.Size_GB, 0),
     []
   );
 
@@ -101,6 +94,17 @@ export default function AdminDashboard() {
     });
   }
 
+  function addFeature(text: string) {
+    const t = text.trim();
+    if (!t) return;
+    setSpecialFeatures((prev) => (prev.includes(t) ? prev : [...prev, t]));
+    setSpecialInput("");
+  }
+
+  function removeFeature(text: string) {
+    setSpecialFeatures((prev) => prev.filter((f) => f !== text));
+  }
+
   return (
     <div className="min-h-screen bg-zinc-50 text-zinc-900">
       <header className="sticky top-0 z-10 border-b bg-white/80 backdrop-blur">
@@ -110,18 +114,16 @@ export default function AdminDashboard() {
               PS
             </div>
             <div>
-              <h1 className="text-lg font-semibold">PCSmartSpec Admin</h1>
-              <p className="text-xs text-zinc-500">
-                Manage specs, media, guarantee, analytics, and sales
-              </p>
+              <h1 className="text-lg font-semibold">Attach Listing</h1>
+              <p className="text-xs text-zinc-500">Attach photos and set guarantee before publishing</p>
             </div>
           </div>
           <nav className="flex items-center gap-2">
             <a
-              href="/"
+              href="/admin"
               className="rounded-md px-3 py-2 text-sm text-zinc-600 hover:bg-zinc-100"
             >
-              Home
+              Dashboard
             </a>
             <button
               onClick={() => setPublishReady((v) => !v)}
@@ -135,7 +137,7 @@ export default function AdminDashboard() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-6 py-8">
+      <main className="mx-auto max-w-4xl px-6 py-8">
         <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div className="rounded-xl border bg-white p-4">
             <div className="text-sm text-zinc-500">Model</div>
@@ -163,8 +165,102 @@ export default function AdminDashboard() {
           </div>
         </section>
 
-        <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
-          <section className="lg:col-span-2 space-y-6">
+        <div className="mt-8 grid grid-cols-1 gap-6">
+          <section className="space-y-6">
+            <div className="rounded-xl border bg-white p-5">
+              <h2 className="mb-4 text-base font-semibold">Listing Details</h2>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <label className="block text-sm text-zinc-600">Title</label>
+                  <input
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    className="w-full rounded-md border p-2 text-sm"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="block text-sm text-zinc-600">Price (USD)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={price}
+                    onChange={(e) => setPrice(Number(e.target.value))}
+                    className="w-full rounded-md border p-2 text-sm"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="block text-sm text-zinc-600">Condition</label>
+                  <select
+                    value={condition}
+                    onChange={(e) => setCondition(e.target.value)}
+                    className="w-full rounded-md border p-2 text-sm"
+                  >
+                    <option>New</option>
+                    <option>Like New</option>
+                    <option>Used</option>
+                    <option>Refurbished</option>
+                  </select>
+                </div>
+                <div className="space-y-2 sm:col-span-2">
+                  <label className="block text-sm text-zinc-600">Special Features</label>
+                  <div className="flex gap-2">
+                    <input
+                      value={specialInput}
+                      onChange={(e) => setSpecialInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          addFeature(specialInput);
+                        }
+                      }}
+                      placeholder="Type a feature and press Enter"
+                      className="w-full rounded-md border p-2 text-sm"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => addFeature(specialInput)}
+                      className="shrink-0 rounded-md bg-zinc-900 px-3 py-2 text-sm font-medium text-white"
+                    >
+                      Add
+                    </button>
+                  </div>
+                  {!!specialFeatures.length && (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {specialFeatures.map((f) => (
+                        <span key={f} className="inline-flex items-center gap-2 rounded-full border bg-zinc-50 px-3 py-1 text-xs">
+                          {f}
+                          <button
+                            type="button"
+                            onClick={() => removeFeature(f)}
+                            className="rounded bg-zinc-200 px-1 text-[10px]"
+                            aria-label={`Remove ${f}`}
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  <div className="mt-3">
+                    <div className="mb-2 text-xs text-zinc-500">Suggestions</div>
+                    <div className="flex flex-wrap gap-2">
+                      {suggestions.map((s) => (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => addFeature(s)}
+                          className="rounded-full border bg-white px-3 py-1 text-xs hover:bg-zinc-50"
+                        >
+                          + {s}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <p className="mt-3 text-xs text-zinc-500">UI-only; no backend calls.</p>
+            </div>
+
             <div className="rounded-xl border bg-white p-5">
               <h2 className="mb-4 text-base font-semibold">Spec Preview</h2>
               <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
@@ -280,60 +376,6 @@ export default function AdminDashboard() {
               </p>
             </div>
           </section>
-
-          <aside className="space-y-6">
-            <div className="rounded-xl border bg-white p-5">
-              <h2 className="mb-4 text-base font-semibold">Analytics</h2>
-              <div className="space-y-3">
-                <Bar label="Views" value={72} total={100} color="bg-blue-600" />
-                <Bar
-                  label="Saves"
-                  value={38}
-                  total={100}
-                  color="bg-emerald-600"
-                />
-                <Bar
-                  label="Share"
-                  value={22}
-                  total={100}
-                  color="bg-violet-600"
-                />
-                <Bar label="CTR" value={14} total={100} color="bg-amber-600" />
-              </div>
-              <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-                <StatCard title="Conversion" value="3.2%" />
-                <StatCard title="Avg. Price" value="$792" />
-              </div>
-            </div>
-
-            <div className="rounded-xl border bg-white p-5">
-              <h2 className="mb-4 text-base font-semibold">Sold PCs</h2>
-              <div className="overflow-hidden rounded-md border">
-                <table className="w-full text-left text-sm">
-                  <thead className="bg-zinc-50 text-zinc-600">
-                    <tr>
-                      <th className="px-3 py-2">Order</th>
-                      <th className="px-3 py-2">Model</th>
-                      <th className="px-3 py-2">Buyer</th>
-                      <th className="px-3 py-2 text-right">Price</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {mockSold.map((row) => (
-                      <tr key={row.id} className="border-t">
-                        <td className="px-3 py-2">{row.id}</td>
-                        <td className="px-3 py-2">{row.model}</td>
-                        <td className="px-3 py-2">{row.buyer}</td>
-                        <td className="px-3 py-2 text-right">${row.price}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* Other Shops removed - seller-focused UI only */}
-          </aside>
         </div>
 
         <div className="mt-8 flex items-center justify-end gap-3">
