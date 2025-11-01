@@ -1,7 +1,13 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
-import { useRouter, useSearchParams, ReadonlyURLSearchParams } from "next/navigation";
+import {
+  useRouter,
+  useSearchParams,
+  ReadonlyURLSearchParams,
+} from "next/navigation";
+import Navbar from "../components/Navbar";
+import Footer from "../components/Footer";
 
 interface StorageItem {
   Model: string;
@@ -11,6 +17,7 @@ interface StorageItem {
 }
 
 interface PcSpec {
+  id?: string;
   Brand: string;
   Model: string;
   CPU: string;
@@ -60,18 +67,18 @@ export default function AttachListing() {
   }>({});
 
   const [formData, setFormData] = useState<FormData>({
-    brand: '',
-    model: '',
-    cpu: '',
-    ram: '',
-    gpu: '',
-    storage: '',
-    display: '',
-    condition: 'New',
-    price: '',
-    description: '',
+    brand: "",
+    model: "",
+    cpu: "",
+    ram: "",
+    gpu: "",
+    storage: "",
+    display: "",
+    condition: "New",
+    price: "",
+    description: "",
   });
-  
+
   const [scannerData, setScannerData] = useState<PcSpec | null>(null);
   const [waitingForScan, setWaitingForScan] = useState<boolean>(false);
   const [refreshTick, setRefreshTick] = useState<number>(0);
@@ -82,161 +89,185 @@ export default function AttachListing() {
     const fetchScannerData = async () => {
       setIsLoading(true);
       setError(null);
-      
+
       try {
         // Check if we have scanner data in the URL
         const params = new URLSearchParams(window.location.search);
         // Accept multiple param names from external tools
-        const scanId = params.get('scanId') || params.get('pc_id') || params.get('id');
-        
-        console.log('🔍 Scan ID from URL:', scanId);
-        
-        setDebugInfo(prev => ({
+        const scanId =
+          params.get("scanId") || params.get("pc_id") || params.get("id");
+
+        console.log("🔍 Scan ID from URL:", scanId);
+
+        setDebugInfo((prev) => ({
           ...prev,
-          scanId: scanId || 'none',
-          loadedAt: new Date().toISOString()
+          scanId: scanId || "none",
+          loadedAt: new Date().toISOString(),
         }));
-        
+
         if (scanId) {
           console.log(`🔄 Loading scan data for ID: ${scanId}`);
           // Add a timestamp to prevent caching issues
           const timestamp = new Date().getTime();
           const response = await fetch(`/api/scan/${scanId}?t=${timestamp}`, {
             headers: {
-              'Cache-Control': 'no-cache, no-store, must-revalidate',
-              'Pragma': 'no-cache',
-              'Expires': '0'
-            }
+              "Cache-Control": "no-cache, no-store, must-revalidate",
+              Pragma: "no-cache",
+              Expires: "0",
+            },
           });
 
           if (!response.ok) {
             const errorText = await response.text();
-            console.error('❌ API Error Response:', errorText);
+            console.error("❌ API Error Response:", errorText);
             // Surface 404 specifically so outer catch can handle it
             if (response.status === 404) {
-              throw new Error('404: Scan not found');
+              throw new Error("404: Scan not found");
             }
-            throw new Error(`Failed to fetch scan data: ${response.status} ${response.statusText}`);
+            throw new Error(
+              `Failed to fetch scan data: ${response.status} ${response.statusText}`
+            );
           }
 
           const responseData = await response.json();
-          console.log('📦 Fetched scan data:', responseData);
+          console.log("📦 Fetched scan data:", responseData);
 
           // The actual scan data is in the 'data' property of the response
           const scanData = responseData.data || responseData;
-          console.log('🔍 Raw scan data:', JSON.stringify(scanData, null, 2));
-          console.log('🔍 Scan_Time from API:', scanData.Scan_Time);
+          console.log("🔍 Raw scan data:", JSON.stringify(scanData, null, 2));
+          console.log("🔍 Scan_Time from API:", scanData.Scan_Time);
 
           setScannerData(scanData);
           setWaitingForScan(false);
 
           // Format storage information
-          const storageInfo = (scanData.Storage || []).map((s: StorageItem) =>
-            `${s.Size_GB}GB ${s.Type} ${s.BusType}`
-          ).join(' + ');
+          const storageInfo = (scanData.Storage || [])
+            .map((s: StorageItem) => `${s.Size_GB}GB ${s.Type} ${s.BusType}`)
+            .join(" + ");
 
           // Update form with scanner data
           const newFormData = {
-            brand: scanData.Brand || '',
-            model: scanData.Model || '',
-            cpu: scanData.CPU || '',
-            ram: scanData.RAM_GB ? `${scanData.RAM_GB}GB ${scanData.RAM_Type || ''} ${scanData.RAM_Speed_MHz || ''}MHz` : '',
-            gpu: scanData.GPU || '',
+            brand: scanData.Brand || "",
+            model: scanData.Model || "",
+            cpu: scanData.CPU || "",
+            ram: scanData.RAM_GB
+              ? `${scanData.RAM_GB}GB ${scanData.RAM_Type || ""} ${
+                  scanData.RAM_Speed_MHz || ""
+                }MHz`
+              : "",
+            gpu: scanData.GPU || "",
             storage: storageInfo,
-            display: scanData.Display_Resolution ? `${scanData.Display_Resolution} (${scanData.Screen_Size_inch || ''}")` : '',
-            cores: scanData.Cores || '',
-            threads: scanData.Threads || '',
-            baseSpeedMHz: scanData.BaseSpeed_MHz || '',
-            os: scanData.OS || '',
-            condition: 'New',
-            price: '',
-            description: ''
+            display: scanData.Display_Resolution
+              ? `${scanData.Display_Resolution} (${
+                  scanData.Screen_Size_inch || ""
+                }")`
+              : "",
+            cores: scanData.Cores || "",
+            threads: scanData.Threads || "",
+            baseSpeedMHz: scanData.BaseSpeed_MHz || "",
+            os: scanData.OS || "",
+            condition: "New",
+            price: "",
+            description: "",
           };
 
           setFormData(newFormData);
           // Auto-fill listing title from scanned data
-          setTitle([scanData.Brand, scanData.Model].filter(Boolean).join(' ').trim());
-          console.log('✅ Form data updated with scan data');
+          setTitle(
+            [scanData.Brand, scanData.Model].filter(Boolean).join(" ").trim()
+          );
+          console.log("✅ Form data updated with scan data");
 
-          setDebugInfo(prev => ({
+          setDebugInfo((prev) => ({
             ...prev,
             data: {
               ...scanData,
               Storage: scanData.Storage.map((s: StorageItem) => ({
                 ...s,
-                Size_GB: `${s.Size_GB}GB`
-              }))
-            }
+                Size_GB: `${s.Size_GB}GB`,
+              })),
+            },
           }));
         } else {
-          console.log('ℹ️ No scan ID found in URL, trying latest scan');
+          console.log("ℹ️ No scan ID found in URL, trying latest scan");
           // Try to get the latest available scan for cross-device flow
           const timestamp = new Date().getTime();
           const latestResp = await fetch(`/api/scan/latest?t=${timestamp}`, {
             headers: {
-              'Cache-Control': 'no-cache, no-store, must-revalidate',
-              'Pragma': 'no-cache',
-              'Expires': '0'
-            }
+              "Cache-Control": "no-cache, no-store, must-revalidate",
+              Pragma: "no-cache",
+              Expires: "0",
+            },
           });
           if (latestResp.ok) {
             const latestData = await latestResp.json();
             const scanData = latestData.data || latestData;
-            console.log('📦 Latest scan data:', scanData);
+            console.log("📦 Latest scan data:", scanData);
 
             setScannerData(scanData);
             setWaitingForScan(false);
 
-            const storageInfo = (scanData.Storage || []).map((s: StorageItem) =>
-              `${s.Size_GB}GB ${s.Type} ${s.BusType}`
-            ).join(' + ');
+            const storageInfo = (scanData.Storage || [])
+              .map((s: StorageItem) => `${s.Size_GB}GB ${s.Type} ${s.BusType}`)
+              .join(" + ");
 
             const newFormData = {
-              brand: scanData.Brand || '',
-              model: scanData.Model || '',
-              cpu: scanData.CPU || '',
-              ram: scanData.RAM_GB ? `${scanData.RAM_GB}GB ${scanData.RAM_Type || ''} ${scanData.RAM_Speed_MHz || ''}MHz` : '',
-              gpu: scanData.GPU || '',
+              brand: scanData.Brand || "",
+              model: scanData.Model || "",
+              cpu: scanData.CPU || "",
+              ram: scanData.RAM_GB
+                ? `${scanData.RAM_GB}GB ${scanData.RAM_Type || ""} ${
+                    scanData.RAM_Speed_MHz || ""
+                  }MHz`
+                : "",
+              gpu: scanData.GPU || "",
               storage: storageInfo,
-              display: scanData.Display_Resolution ? `${scanData.Display_Resolution} (${scanData.Screen_Size_inch || ''}")` : '',
-              cores: scanData.Cores || '',
-              threads: scanData.Threads || '',
-              baseSpeedMHz: scanData.BaseSpeed_MHz || '',
-              os: scanData.OS || '',
-              condition: 'New',
-              price: '',
-              description: ''
+              display: scanData.Display_Resolution
+                ? `${scanData.Display_Resolution} (${
+                    scanData.Screen_Size_inch || ""
+                  }")`
+                : "",
+              cores: scanData.Cores || "",
+              threads: scanData.Threads || "",
+              baseSpeedMHz: scanData.BaseSpeed_MHz || "",
+              os: scanData.OS || "",
+              condition: "New",
+              price: "",
+              description: "",
             };
             setFormData(newFormData);
             // Auto-fill listing title from latest scan
-            setTitle([scanData.Brand, scanData.Model].filter(Boolean).join(' ').trim());
+            setTitle(
+              [scanData.Brand, scanData.Model].filter(Boolean).join(" ").trim()
+            );
           } else {
             setWaitingForScan(true);
             setScannerData(null);
           }
         }
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        console.error('❌ Error loading scanner data:', error);
+        const errorMessage =
+          error instanceof Error ? error.message : "Unknown error";
+        console.error("❌ Error loading scanner data:", error);
 
-        if (typeof errorMessage === 'string' && errorMessage.includes('404')) {
+        if (typeof errorMessage === "string" && errorMessage.includes("404")) {
           // Treat 404 as "waiting for a new scan" instead of an error
           setError(null);
           setWaitingForScan(true);
           setScannerData(null);
           setFormData({
-            brand: '',
-            model: '',
-            cpu: '',
-            ram: '',
-            gpu: '',
-            storage: '',
-            display: '',
-            condition: 'New',
-            price: '',
-            description: ''
+            brand: "",
+            model: "",
+            cpu: "",
+            ram: "",
+            gpu: "",
+            storage: "",
+            display: "",
+            condition: "New",
+            price: "",
+            description: "",
           });
-          setTitle('');
+          setTitle("");
         } else {
           // Other errors: show error message, do not populate mock data
           setScannerData(null);
@@ -247,8 +278,8 @@ export default function AttachListing() {
         setIsLoading(false);
       }
     };
-    
-    if (typeof window !== 'undefined') {
+
+    if (typeof window !== "undefined") {
       fetchScannerData();
     }
   }, [searchParams, refreshTick]);
@@ -259,7 +290,13 @@ export default function AttachListing() {
     return () => clearInterval(id);
   }, [waitingForScan]);
 
-  function SpecItem({ label, value }: { label: string; value: string | number | undefined }) {
+  function SpecItem({
+    label,
+    value,
+  }: {
+    label: string;
+    value: string | number | undefined;
+  }) {
     return (
       <div className="rounded-lg border bg-white p-3">
         <div className="text-xs text-zinc-500">{label}</div>
@@ -285,6 +322,8 @@ export default function AttachListing() {
   const [batteryOther, setBatteryOther] = useState<string>("");
   const [attached, setAttached] = useState<boolean>(false);
   const [attachedCount, setAttachedCount] = useState<number>(0);
+  const [publishing, setPublishing] = useState<boolean>(false);
+  const [publishMessage, setPublishMessage] = useState<string | null>(null);
   const suggestions = useMemo(
     () => [
       "Backlit Keyboard",
@@ -314,14 +353,20 @@ export default function AttachListing() {
   );
 
   const totalStorageGB = useMemo(
-    () => (scannerData?.Storage || []).reduce((sum, s) => sum + Number(s.Size_GB || 0), 0),
+    () =>
+      (scannerData?.Storage || []).reduce(
+        (sum, s) => sum + Number(s.Size_GB || 0),
+        0
+      ),
     [scannerData]
   );
   const ramSummary = useMemo(
     () =>
       scannerData?.RAM_GB
-        ? `${scannerData.RAM_GB}GB ${scannerData.RAM_Type || ''} ${scannerData.RAM_Speed_MHz || ''}MHz`.trim()
-        : 'N/A',
+        ? `${scannerData.RAM_GB}GB ${scannerData.RAM_Type || ""} ${
+            scannerData.RAM_Speed_MHz || ""
+          }MHz`.trim()
+        : "N/A",
     [scannerData]
   );
   const storageKinds = useMemo(() => {
@@ -377,12 +422,23 @@ export default function AttachListing() {
       <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-6">
         <div className="flex">
           <div className="flex-shrink-0">
-            <svg className="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+            <svg
+              className="h-5 w-5 text-red-400"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fillRule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                clipRule="evenodd"
+              />
             </svg>
           </div>
           <div className="ml-3">
-            <h3 className="text-sm font-medium text-red-800">Error loading scanner data</h3>
+            <h3 className="text-sm font-medium text-red-800">
+              Error loading scanner data
+            </h3>
             <div className="mt-2 text-sm text-red-700">
               <p>{error}</p>
             </div>
@@ -391,8 +447,16 @@ export default function AttachListing() {
                 onClick={() => window.location.reload()}
                 className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
               >
-                <svg className="-ml-0.5 mr-1.5 h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
+                <svg
+                  className="-ml-0.5 mr-1.5 h-3 w-3"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z"
+                    clipRule="evenodd"
+                  />
                 </svg>
                 Try Again
               </button>
@@ -404,20 +468,34 @@ export default function AttachListing() {
   }
 
   return (
-    <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-gray-900">Attach Listing</h1>
-        <p className="text-sm text-zinc-500">Create a new product listing</p>
+    <div className="bg-zinc-50 text-zinc-900">
+      <Navbar />
+      <div className="mb-6 flex flex-col justify-center items-center m-6 gap-2">
+        <h1 className=" text-2xl font-semibold font-mono text-gray-900">
+          Attach Listing
+        </h1>
       </div>
       {waitingForScan && (
         <div className="mb-6 rounded-md border border-blue-200 bg-blue-50 p-4 text-blue-800">
           <div className="flex items-start gap-3">
-            <svg className="h-5 w-5 mt-0.5 text-blue-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M18 10A8 8 0 11.001 10 8 8 0 0118 10zm-8-5a1 1 0 00-1 1v3.382l-1.724 1.724a1 1 0 101.414 1.414l2-2A1 1 0 0010 10V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            <svg
+              className="h-5 w-5 mt-0.5 text-blue-500"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fillRule="evenodd"
+                d="M18 10A8 8 0 11.001 10 8 8 0 0118 10zm-8-5a1 1 0 00-1 1v3.382l-1.724 1.724a1 1 0 101.414 1.414l2-2A1 1 0 0010 10V6a1 1 0 00-1-1z"
+                clipRule="evenodd"
+              />
             </svg>
             <div>
               <div className="text-sm font-medium">Waiting for a PC scan…</div>
-              <div className="mt-1 text-sm">Once a new PC is scanned and uploaded, this page will populate automatically. You can also retry manually.</div>
+              <div className="mt-1 text-sm">
+                Once a new PC is scanned and uploaded, this page will populate
+                automatically. You can also retry manually.
+              </div>
               <div className="mt-3">
                 <button
                   onClick={() => {
@@ -434,30 +512,45 @@ export default function AttachListing() {
         </div>
       )}
       <main className="mx-auto max-w-6xl px-6 py-8 space-y-6">
+        {publishMessage && (
+          <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">
+            {publishMessage}
+          </div>
+        )}
         <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           <div className="rounded-xl border bg-white p-4 lg:col-span-2 xl:col-span-2">
             <div className="text-sm text-zinc-500">Model</div>
             <div className="text-lg font-semibold truncate sm:whitespace-normal sm:overflow-visible sm:text-clip">
-              {scannerData?.Model || (waitingForScan ? 'Waiting…' : 'N/A')}
+              {scannerData?.Model || (waitingForScan ? "Waiting…" : "N/A")}
             </div>
           </div>
           <div className="rounded-xl border bg-white p-4">
             <div className="text-sm text-zinc-500">CPU / RAM</div>
             <div className="text-lg font-semibold">
-              {(scannerData?.CPU?.split(" ")[0]) || (waitingForScan ? 'Waiting…' : 'N/A')} · {(scannerData ? ramSummary : (waitingForScan ? 'Waiting…' : 'N/A'))}
+              {scannerData?.CPU?.split(" ")[0] ||
+                (waitingForScan ? "Waiting…" : "N/A")}{" "}
+              · {scannerData ? ramSummary : waitingForScan ? "Waiting…" : "N/A"}
             </div>
           </div>
           <div className="rounded-xl border bg-white p-4">
             <div className="text-sm text-zinc-500">Storage Total</div>
             <div className="text-lg font-semibold">
-              {totalStorageGB ? `${totalStorageGB.toFixed(0)} GB` : (waitingForScan ? 'Waiting…' : 'N/A')}
+              {totalStorageGB
+                ? `${totalStorageGB.toFixed(0)} GB`
+                : waitingForScan
+                ? "Waiting…"
+                : "N/A"}
               {storageKinds ? ` · ${storageKinds}` : ""}
             </div>
           </div>
           <div className="rounded-xl border bg-white p-4">
             <div className="text-sm text-zinc-500">Scan Time</div>
             <div className="text-lg font-semibold">
-              {scannerData?.Scan_Time ? formatScanTime(scannerData.Scan_Time) : (waitingForScan ? 'Waiting…' : 'N/A')}
+              {scannerData?.Scan_Time
+                ? formatScanTime(scannerData.Scan_Time)
+                : waitingForScan
+                ? "Waiting…"
+                : "N/A"}
             </div>
           </div>
         </section>
@@ -610,7 +703,7 @@ export default function AttachListing() {
                     onClick={() => setEditSpecs((v) => !v)}
                     className="rounded-md border px-3 py-1 text-xs font-medium"
                   >
-                    {editSpecs ? 'Done' : 'Edit Specs'}
+                    {editSpecs ? "Done" : "Edit Specs"}
                   </button>
                 </div>
                 <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
@@ -618,66 +711,173 @@ export default function AttachListing() {
                     <>
                       <div className="space-y-1">
                         <div className="text-xs text-zinc-500">Brand</div>
-                        <input className="w-full rounded-md border p-2 text-sm" value={formData.brand}
-                          onChange={(e) => setFormData((f) => ({ ...f, brand: e.target.value }))} />
+                        <input
+                          className="w-full rounded-md border p-2 text-sm"
+                          value={formData.brand}
+                          onChange={(e) =>
+                            setFormData((f) => ({
+                              ...f,
+                              brand: e.target.value,
+                            }))
+                          }
+                        />
                       </div>
                       <div className="space-y-1">
                         <div className="text-xs text-zinc-500">Model</div>
-                        <input className="w-full rounded-md border p-2 text-sm" value={formData.model}
-                          onChange={(e) => setFormData((f) => ({ ...f, model: e.target.value }))} />
+                        <input
+                          className="w-full rounded-md border p-2 text-sm"
+                          value={formData.model}
+                          onChange={(e) =>
+                            setFormData((f) => ({
+                              ...f,
+                              model: e.target.value,
+                            }))
+                          }
+                        />
                       </div>
                       <div className="space-y-1">
                         <div className="text-xs text-zinc-500">CPU</div>
-                        <input className="w-full rounded-md border p-2 text-sm" value={formData.cpu}
-                          onChange={(e) => setFormData((f) => ({ ...f, cpu: e.target.value }))} />
+                        <input
+                          className="w-full rounded-md border p-2 text-sm"
+                          value={formData.cpu}
+                          onChange={(e) =>
+                            setFormData((f) => ({ ...f, cpu: e.target.value }))
+                          }
+                        />
                       </div>
                       <div className="space-y-1">
                         <div className="text-xs text-zinc-500">Cores</div>
-                        <input className="w-full rounded-md border p-2 text-sm" value={formData.cores || ''}
-                          onChange={(e) => setFormData((f) => ({ ...f, cores: e.target.value }))} />
+                        <input
+                          className="w-full rounded-md border p-2 text-sm"
+                          value={formData.cores || ""}
+                          onChange={(e) =>
+                            setFormData((f) => ({
+                              ...f,
+                              cores: e.target.value,
+                            }))
+                          }
+                        />
                       </div>
                       <div className="space-y-1">
                         <div className="text-xs text-zinc-500">Threads</div>
-                        <input className="w-full rounded-md border p-2 text-sm" value={formData.threads || ''}
-                          onChange={(e) => setFormData((f) => ({ ...f, threads: e.target.value }))} />
+                        <input
+                          className="w-full rounded-md border p-2 text-sm"
+                          value={formData.threads || ""}
+                          onChange={(e) =>
+                            setFormData((f) => ({
+                              ...f,
+                              threads: e.target.value,
+                            }))
+                          }
+                        />
                       </div>
                       <div className="space-y-1">
-                        <div className="text-xs text-zinc-500">Base Speed (MHz)</div>
-                        <input className="w-full rounded-md border p-2 text-sm" value={formData.baseSpeedMHz || ''}
-                          onChange={(e) => setFormData((f) => ({ ...f, baseSpeedMHz: e.target.value }))} />
+                        <div className="text-xs text-zinc-500">
+                          Base Speed (MHz)
+                        </div>
+                        <input
+                          className="w-full rounded-md border p-2 text-sm"
+                          value={formData.baseSpeedMHz || ""}
+                          onChange={(e) =>
+                            setFormData((f) => ({
+                              ...f,
+                              baseSpeedMHz: e.target.value,
+                            }))
+                          }
+                        />
                       </div>
                       <div className="space-y-1">
                         <div className="text-xs text-zinc-500">RAM</div>
-                        <input className="w-full rounded-md border p-2 text-sm" value={formData.ram}
-                          onChange={(e) => setFormData((f) => ({ ...f, ram: e.target.value }))} />
+                        <input
+                          className="w-full rounded-md border p-2 text-sm"
+                          value={formData.ram}
+                          onChange={(e) =>
+                            setFormData((f) => ({ ...f, ram: e.target.value }))
+                          }
+                        />
                       </div>
                       <div className="space-y-1">
                         <div className="text-xs text-zinc-500">GPU</div>
-                        <input className="w-full rounded-md border p-2 text-sm" value={formData.gpu}
-                          onChange={(e) => setFormData((f) => ({ ...f, gpu: e.target.value }))} />
+                        <input
+                          className="w-full rounded-md border p-2 text-sm"
+                          value={formData.gpu}
+                          onChange={(e) =>
+                            setFormData((f) => ({ ...f, gpu: e.target.value }))
+                          }
+                        />
                       </div>
                       <div className="space-y-1">
                         <div className="text-xs text-zinc-500">Display</div>
-                        <input className="w-full rounded-md border p-2 text-sm" value={formData.display}
-                          onChange={(e) => setFormData((f) => ({ ...f, display: e.target.value }))} />
+                        <input
+                          className="w-full rounded-md border p-2 text-sm"
+                          value={formData.display}
+                          onChange={(e) =>
+                            setFormData((f) => ({
+                              ...f,
+                              display: e.target.value,
+                            }))
+                          }
+                        />
                       </div>
                       <div className="space-y-1">
                         <div className="text-xs text-zinc-500">OS</div>
-                        <input className="w-full rounded-md border p-2 text-sm" value={formData.os || ''}
-                          onChange={(e) => setFormData((f) => ({ ...f, os: e.target.value }))} />
+                        <input
+                          className="w-full rounded-md border p-2 text-sm"
+                          value={formData.os || ""}
+                          onChange={(e) =>
+                            setFormData((f) => ({ ...f, os: e.target.value }))
+                          }
+                        />
                       </div>
                     </>
                   ) : (
                     <>
-                      <SpecItem label="Brand" value={formData.brand || scannerData.Brand} />
-                      <SpecItem label="Model" value={formData.model || scannerData.Model} />
-                      <SpecItem label="CPU" value={formData.cpu || scannerData.CPU} />
-                      <SpecItem label="Cores / Threads" value={`${formData.cores || scannerData.Cores} / ${formData.threads || scannerData.Threads}`} />
-                      <SpecItem label="Base Speed" value={`${formData.baseSpeedMHz || scannerData.BaseSpeed_MHz} MHz`} />
-                      <SpecItem label="RAM" value={formData.ram || `${scannerData.RAM_GB} GB ${scannerData.RAM_Type} @ ${scannerData.RAM_Speed_MHz} MHz`} />
-                      <SpecItem label="GPU" value={formData.gpu || scannerData.GPU} />
-                      <SpecItem label="Display" value={formData.display || `${scannerData.Display_Resolution} · ${scannerData.Screen_Size_inch}\"`} />
-                      <SpecItem label="OS" value={formData.os || scannerData.OS} />
+                      <SpecItem
+                        label="Brand"
+                        value={formData.brand || scannerData.Brand}
+                      />
+                      <SpecItem
+                        label="Model"
+                        value={formData.model || scannerData.Model}
+                      />
+                      <SpecItem
+                        label="CPU"
+                        value={formData.cpu || scannerData.CPU}
+                      />
+                      <SpecItem
+                        label="Cores / Threads"
+                        value={`${formData.cores || scannerData.Cores} / ${
+                          formData.threads || scannerData.Threads
+                        }`}
+                      />
+                      <SpecItem
+                        label="Base Speed"
+                        value={`${
+                          formData.baseSpeedMHz || scannerData.BaseSpeed_MHz
+                        } MHz`}
+                      />
+                      <SpecItem
+                        label="RAM"
+                        value={
+                          formData.ram ||
+                          `${scannerData.RAM_GB} GB ${scannerData.RAM_Type} @ ${scannerData.RAM_Speed_MHz} MHz`
+                        }
+                      />
+                      <SpecItem
+                        label="GPU"
+                        value={formData.gpu || scannerData.GPU}
+                      />
+                      <SpecItem
+                        label="Display"
+                        value={
+                          formData.display ||
+                          `${scannerData.Display_Resolution} · ${scannerData.Screen_Size_inch}\"`
+                        }
+                      />
+                      <SpecItem
+                        label="OS"
+                        value={formData.os || scannerData.OS}
+                      />
                     </>
                   )}
                 </div>
@@ -685,7 +885,10 @@ export default function AttachListing() {
                   <div className="text-sm font-medium">Storage</div>
                   <ul className="mt-2 divide-y rounded-md border bg-zinc-50">
                     {(scannerData.Storage || []).map((s, i) => (
-                      <li key={i} className="grid grid-cols-4 gap-2 p-3 text-sm">
+                      <li
+                        key={i}
+                        className="grid grid-cols-4 gap-2 p-3 text-sm"
+                      >
                         <div className="col-span-2 truncate sm:whitespace-normal sm:overflow-visible sm:text-clip">
                           {s.Model}
                         </div>
@@ -804,9 +1007,42 @@ export default function AttachListing() {
           </button>
           <button
             className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-            disabled={!images.length}
+            disabled={publishing || !scannerData?.id}
+            onClick={async () => {
+              try {
+                setPublishing(true);
+                setPublishMessage(null);
+                const res = await fetch("/api/listings/publish", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    id: scannerData?.id,
+                    title,
+                    price,
+                    extras: {
+                      condition,
+                      // you can include additional fields as needed
+                    },
+                  }),
+                });
+                if (!res.ok) {
+                  const t = await res.text();
+                  throw new Error(t || `Failed to publish: ${res.status}`);
+                }
+                const data = await res.json();
+                setPublishMessage(
+                  "✅ Listing published. It will now appear on the buyer page."
+                );
+              } catch (e: any) {
+                setPublishMessage(
+                  `❌ ${e?.message || "Failed to publish listing"}`
+                );
+              } finally {
+                setPublishing(false);
+              }
+            }}
           >
-            Publish Listing
+            {publishing ? "Publishing…" : "Publish Listing"}
           </button>
         </div>
       </main>
@@ -853,45 +1089,45 @@ function StatCard({ title, value }: { title: string; value: string }) {
 
 function formatScanTime(dateStr: string) {
   try {
-    console.log('📅 Formatting date string:', dateStr);
-    
+    console.log("📅 Formatting date string:", dateStr);
+
     if (!dateStr) {
-      console.warn('⚠️ No date string provided to formatScanTime');
-      return 'N/A';
+      console.warn("⚠️ No date string provided to formatScanTime");
+      return "N/A";
     }
-    
+
     // Create date object
     const date = new Date(dateStr);
-    
+
     // Check if date is valid
     if (isNaN(date.getTime())) {
-      console.error('❌ Invalid date string:', dateStr);
-      return 'Invalid date';
+      console.error("❌ Invalid date string:", dateStr);
+      return "Invalid date";
     }
-    
+
     // Format time in Ethiopian timezone (Africa/Addis_Ababa)
     const etTime = date.toLocaleTimeString("en-ET", {
       timeZone: "Africa/Addis_Ababa",
       hour12: true,
       hour: "numeric",
       minute: "numeric",
-      second: "numeric"
+      second: "numeric",
     });
-    
+
     // Format date in Ethiopian timezone
     const etDate = date.toLocaleDateString("en-ET", {
       timeZone: "Africa/Addis_Ababa",
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit'
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
     });
-    
+
     const formattedDate = `${etDate}, ${etTime} (EAT)`;
-    console.log('✅ Formatted date:', formattedDate);
-    
+    console.log("✅ Formatted date:", formattedDate);
+
     return formattedDate;
   } catch (error) {
-    console.error('❌ Error formatting date:', error);
-    return 'Error formatting date';
+    console.error("❌ Error formatting date:", error);
+    return "Error formatting date";
   }
 }

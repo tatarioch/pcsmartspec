@@ -96,3 +96,17 @@ export const getLatestScan = async (): Promise<ScanData | undefined> => {
     return tb - ta;
   })[0];
 };
+
+export const getAllScans = async (): Promise<ScanData[]> => {
+  const store = await readStore();
+  return Object.values(store);
+};
+
+export const updateScan = async (id: string, patch: Partial<ScanData> & Record<string, any>): Promise<ScanData | undefined> => {
+  const store = await readStore();
+  if (!store[id]) return undefined;
+  const updated = { ...store[id], ...patch } as ScanData;
+  store[id] = updated;
+  await writeStore(store);
+  return updated;
+};
