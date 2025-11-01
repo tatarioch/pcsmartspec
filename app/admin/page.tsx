@@ -59,6 +59,10 @@ export default function AdminDashboard() {
     useState<string>("PCSmartSpec");
   const [publishReady, setPublishReady] = useState<boolean>(false);
 
+  const [listPrice, setListPrice] = useState<number>(799);
+  const [discountPct, setDiscountPct] = useState<number>(0);
+  const [stock, setStock] = useState<number>(5);
+
   const totalStorageGB = useMemo(
     () => sampleSpec.Storage.reduce((sum, s) => sum + s.Size_GB, 0),
     []
@@ -150,110 +154,115 @@ export default function AdminDashboard() {
       </header>
 
       <main className="mx-auto max-w-7xl px-6 py-8">
-        <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          <div className="rounded-xl border bg-white p-4 lg:col-span-2 xl:col-span-2">
-            <div className="text-sm text-zinc-500">Model</div>
-            <div className="text-lg font-semibold truncate sm:whitespace-normal sm:overflow-visible sm:text-clip">
-              {sampleSpec.Model}
-            </div>
+        <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+          <div className="rounded-xl border bg-white p-4">
+            <div className="text-sm text-zinc-500">Active Listings</div>
+            <div className="text-2xl font-semibold">42</div>
           </div>
           <div className="rounded-xl border bg-white p-4">
-            <div className="text-sm text-zinc-500">CPU / RAM</div>
-            <div className="text-lg font-semibold">
-              {sampleSpec.CPU.split(" ")[0]} · {ramSummary}
-            </div>
+            <div className="text-sm text-zinc-500">Views (7d)</div>
+            <div className="text-2xl font-semibold">1,284</div>
           </div>
           <div className="rounded-xl border bg-white p-4">
-            <div className="text-sm text-zinc-500">Storage Total</div>
-            <div className="text-lg font-semibold">
-              {totalStorageGB.toFixed(0)} GB{storageKinds ? ` · ${storageKinds}` : ""}
-            </div>
+            <div className="text-sm text-zinc-500">Saves (7d)</div>
+            <div className="text-2xl font-semibold">312</div>
           </div>
           <div className="rounded-xl border bg-white p-4">
-            <div className="text-sm text-zinc-500">Scan Time</div>
-            <div className="text-lg font-semibold">
-              {formatScanTime(sampleSpec.Scan_Time)}
-            </div>
+            <div className="text-sm text-zinc-500">Conversion</div>
+            <div className="text-2xl font-semibold">3.1%</div>
+          </div>
+          <div className="rounded-xl border bg-white p-4">
+            <div className="text-sm text-zinc-500">Revenue (MTD)</div>
+            <div className="text-2xl font-semibold">$25,430</div>
+          </div>
+          <div className="rounded-xl border bg-white p-4">
+            <div className="text-sm text-zinc-500">Orders (MTD)</div>
+            <div className="text-2xl font-semibold">64</div>
           </div>
         </section>
 
         <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
           <section className="lg:col-span-2 space-y-6">
             <div className="rounded-xl border bg-white p-5">
-              <h2 className="mb-4 text-base font-semibold">Spec Preview</h2>
-              <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
-                <SpecItem label="Brand" value={sampleSpec.Brand} />
-                <SpecItem label="Model" value={sampleSpec.Model} />
-                <SpecItem label="CPU" value={sampleSpec.CPU} />
-                <SpecItem
-                  label="Cores / Threads"
-                  value={`${sampleSpec.Cores} / ${sampleSpec.Threads}`}
-                />
-                <SpecItem
-                  label="Base Speed"
-                  value={`${sampleSpec.BaseSpeed_MHz} MHz`}
-                />
-                <SpecItem
-                  label="RAM"
-                  value={`${sampleSpec.RAM_GB} GB ${sampleSpec.RAM_Type} @ ${sampleSpec.RAM_Speed_MHz} MHz`}
-                />
-                <SpecItem label="GPU" value={sampleSpec.GPU} />
-                <SpecItem
-                  label="Display"
-                  value={`${sampleSpec.Display_Resolution} · ${sampleSpec.Screen_Size_inch}\"`}
-                />
-                <SpecItem label="OS" value={sampleSpec.OS} />
-              </div>
-              <div className="mt-4">
-                <div className="text-sm font-medium">Storage</div>
-                <ul className="mt-2 divide-y rounded-md border bg-zinc-50">
-                  {sampleSpec.Storage.map((s, i) => (
-                    <li key={i} className="grid grid-cols-4 gap-2 p-3 text-sm">
-                      <div className="col-span-2 truncate sm:whitespace-normal sm:overflow-visible sm:text-clip">{s.Model}</div>
-                      <div>
-                        {s.Type}/{s.BusType}
+              <h2 className="mb-4 text-base font-semibold">Seller Panel</h2>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="space-y-3">
+                  <div className="text-sm font-medium">Quick Actions</div>
+                  <div className="flex flex-wrap gap-2">
+                    <button className="rounded-md border px-3 py-2 text-sm">Duplicate Listing</button>
+                    <button className="rounded-md border px-3 py-2 text-sm">Share</button>
+                    <button className="rounded-md border px-3 py-2 text-sm">Feature Listing</button>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="text-sm font-medium">Pricing</div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="col-span-2">
+                      <label className="mb-1 block text-xs text-zinc-500">List Price (USD)</label>
+                      <input
+                        type="number"
+                        min={0}
+                        value={listPrice}
+                        onChange={(e) => setListPrice(Number(e.target.value))}
+                        className="w-full rounded-md border p-2 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-xs text-zinc-500">Discount %</label>
+                      <input
+                        type="number"
+                        value={discountPct}
+                        onChange={(e) => setDiscountPct(Number(e.target.value))}
+                        className="w-full rounded-md border p-2 text-sm"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="text-zinc-600">Final Price</div>
+                    <div className="font-semibold">${Math.max(0, Math.round(listPrice * (1 - discountPct / 100)))}</div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => setDiscountPct((v) => v - 5)} className="rounded-md border px-3 py-2 text-sm">-5%</button>
+                    <button onClick={() => setDiscountPct((v) => v + 5)} className="rounded-md border px-3 py-2 text-sm">+5%</button>
+                    <button onClick={() => setDiscountPct(0)} className="rounded-md border px-3 py-2 text-sm">Reset</button>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="text-sm font-medium">Promotions</div>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <label className="flex items-center gap-2"><input type="checkbox" /> Homepage Feature</label>
+                    <label className="flex items-center gap-2"><input type="checkbox" /> Highlight Badge</label>
+                    <label className="flex items-center gap-2"><input type="checkbox" /> Bundle Discount</label>
+                    <label className="flex items-center gap-2"><input type="checkbox" /> Free Delivery</label>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="text-sm font-medium">Inventory</div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div>
+                      <label className="mb-1 block text-xs text-zinc-500">In Stock</label>
+                      <input
+                        type="number"
+                        min={0}
+                        value={stock}
+                        onChange={(e) => setStock(Number(e.target.value))}
+                        className="w-full rounded-md border p-2 text-sm"
+                      />
+                    </div>
+                    <div className="col-span-2 flex items-end">
+                      <div className={`w-full rounded-md border p-2 text-center text-sm ${stock > 3 ? "bg-emerald-50 text-emerald-700" : stock > 0 ? "bg-amber-50 text-amber-700" : "bg-rose-50 text-rose-700"}`}>
+                        {stock > 3 ? "In Stock" : stock > 0 ? "Low Stock" : "Out of Stock"}
                       </div>
-                      <div className="text-right">{s.Size_GB} GB</div>
-                    </li>
-                  ))}
-                </ul>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div className="rounded-xl border bg-white p-5">
-              <h2 className="mb-4 text-base font-semibold">Photos</h2>
-              <div className="flex items-center justify-between gap-4">
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={onSelectImages}
-                  className="block w-full rounded-md border p-2 text-sm"
-                />
-                <button
-                  className="rounded-md bg-zinc-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
-                  disabled={!images.length || !publishReady}
-                >
-                  Attach to Listing
-                </button>
-              </div>
-              {!!images.length && (
-                <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                  {images.map((src, idx) => (
-                    <div
-                      key={idx}
-                      className="overflow-hidden rounded-lg border bg-white"
-                    >
-                      <img
-                        src={src}
-                        alt={`upload-${idx}`}
-                        className="h-32 w-full object-cover"
-                      />
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            
 
             <div className="rounded-xl border bg-white p-5">
               <h2 className="mb-4 text-base font-semibold">Guarantee</h2>

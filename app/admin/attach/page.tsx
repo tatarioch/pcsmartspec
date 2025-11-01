@@ -57,7 +57,6 @@ export default function AttachListing() {
   const [guaranteeMonths, setGuaranteeMonths] = useState<number>(12);
   const [guaranteeProvider, setGuaranteeProvider] =
     useState<string>("PCSmartSpec");
-  const [publishReady, setPublishReady] = useState<boolean>(false);
   const [title, setTitle] = useState<string>(
     `${sampleSpec.Brand} ${sampleSpec.Model}`
   );
@@ -67,6 +66,8 @@ export default function AttachListing() {
   const [specialInput, setSpecialInput] = useState<string>("");
   const [batteryRange, setBatteryRange] = useState<string>("4-5");
   const [batteryOther, setBatteryOther] = useState<string>("");
+  const [attached, setAttached] = useState<boolean>(false);
+  const [attachedCount, setAttachedCount] = useState<number>(0);
   const suggestions = useMemo(
     () => [
       "Backlit Keyboard",
@@ -116,10 +117,16 @@ export default function AttachListing() {
 
   function onSelectImages(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files || []);
-    files.forEach((file) => {
+    if (!files.length) return;
+    const remaining = Math.max(0, 4 - images.length);
+    const toRead = files.slice(0, remaining);
+    toRead.forEach((file) => {
       const reader = new FileReader();
       reader.onload = () =>
-        setImages((prev) => [...prev, String(reader.result)]);
+        setImages((prev) => {
+          if (prev.length >= 4) return prev;
+          return [...prev, String(reader.result)];
+        });
       reader.readAsDataURL(file);
     });
   }
@@ -133,6 +140,16 @@ export default function AttachListing() {
 
   function removeFeature(text: string) {
     setSpecialFeatures((prev) => prev.filter((f) => f !== text));
+  }
+
+  function removeImage(index: number) {
+    setImages((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  function onAttach() {
+    if (!images.length) return;
+    setAttached(true);
+    setAttachedCount(images.length);
   }
 
   return (
@@ -155,14 +172,6 @@ export default function AttachListing() {
             >
               Dashboard
             </a>
-            <button
-              onClick={() => setPublishReady((v) => !v)}
-              className={`rounded-md px-3 py-2 text-sm font-medium text-white ${
-                publishReady ? "bg-emerald-600" : "bg-zinc-900"
-              }`}
-            >
-              {publishReady ? "Ready to Publish" : "Mark as Ready"}
-            </button>
           </nav>
         </div>
       </header>
@@ -362,22 +371,37 @@ export default function AttachListing() {
                   accept="image/*"
                   multiple
                   onChange={onSelectImages}
-                  className="block w-full rounded-md border p-2 text-sm"
+                  className="block w-full rounded-md border p-2 text-sm disabled:opacity-50"
+                  disabled={images.length >= 4}
                 />
                 <button
-                  className="rounded-md bg-zinc-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
-                  disabled={!images.length || !publishReady}
+                  onClick={onAttach}
+                  className={`rounded-md px-3 py-2 text-sm font-medium text-white disabled:opacity-50 ${attached ? "bg-emerald-600" : "bg-zinc-900"}`}
+                  disabled={!images.length}
                 >
-                  Attach to Listing
+                  {attached ? `Attached ${attachedCount} photo${attachedCount === 1 ? "" : "s"}` : "Attach to Listing"}
                 </button>
               </div>
+              <div className="mt-2 text-xs text-zinc-500">
+                {images.length}/4 selected
+              </div>
+              {attached && (
+                <div className="mt-3 rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+                  Photos attached to the draft listing. You can still remove or add before publishing.
+                </div>
+              )}
               {!!images.length && (
                 <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
                   {images.map((src, idx) => (
-                    <div
-                      key={idx}
-                      className="overflow-hidden rounded-lg border bg-white"
-                    >
+                    <div key={idx} className="relative overflow-hidden rounded-lg border bg-white">
+                      <button
+                        type="button"
+                        onClick={() => removeImage(idx)}
+                        className="absolute right-1 top-1 rounded-full bg-red-600 px-2 py-[2px] text-xs font-semibold text-white shadow hover:bg-red-700"
+                        aria-label={`Remove image ${idx + 1}`}
+                      >
+                        ×
+                      </button>
                       <img
                         src={src}
                         alt={`upload-${idx}`}
@@ -416,8 +440,7 @@ export default function AttachListing() {
                 </div>
                 <div className="flex items-end">
                   <button
-                    className="w-full rounded-md bg-emerald-600 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
-                    disabled={!publishReady}
+                    className="w-full rounded-md bg-emerald-600 px-3 py-2 text-sm font-medium text-white"
                   >
                     Save Guarantee
                   </button>
@@ -436,7 +459,7 @@ export default function AttachListing() {
           </button>
           <button
             className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-            disabled={!publishReady}
+            disabled={!images.length}
           >
             Publish Listing
           </button>
