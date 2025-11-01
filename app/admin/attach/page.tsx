@@ -1,15 +1,16 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
-type StorageItem = {
+interface StorageItem {
   Model: string;
   Size_GB: number;
   Type: string;
   BusType: string;
-};
+}
 
-type PcSpec = {
+interface PcSpec {
   Brand: string;
   Model: string;
   CPU: string;
@@ -25,6 +26,32 @@ type PcSpec = {
   Screen_Size_inch: number;
   OS: string;
   Scan_Time: string;
+}
+
+// Mock data that matches the Python scanner output
+const mockPcSpec: PcSpec = {
+  Brand: "HP",
+  Model: "Victus by HP Gaming Laptop 15-fa1xxx",
+  CPU: "13th Gen Intel(R) Core(TM) i5-13420H",
+  Cores: "8",
+  Threads: "12",
+  BaseSpeed_MHz: "2100",
+  RAM_GB: "16",
+  RAM_Speed_MHz: "3200",
+  RAM_Type: "DDR4",
+  Storage: [
+    {
+      Model: "PSENN512GA87FC0",
+      Size_GB: 512.11,
+      Type: "SSD",
+      BusType: "NVMe"
+    }
+  ],
+  GPU: "Intel(R) UHD Graphics, NVIDIA GeForce RTX 2050",
+  Display_Resolution: "1920x1080",
+  Screen_Size_inch: 15.6,
+  OS: "Microsoft Windows 11 Home",
+  Scan_Time: new Date().toISOString()
 };
 
 const sampleSpec: PcSpec = {
@@ -52,14 +79,176 @@ const sampleSpec: PcSpec = {
   Scan_Time: "2025-11-01T13:53:16.784566",
 };
 
+// Add this interface at the top with other interfaces
+interface FormData {
+  brand: string;
+  model: string;
+  cpu: string;
+  ram: string;
+  gpu: string;
+  storage: string;
+  display: string;
+  condition: string;
+  price: string;
+  description: string;
+}
+
 export default function AttachListing() {
-  function SpecItem({ label, value }: { label: string; value: string }) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [debugInfo, setDebugInfo] = useState<{
+    scanId?: string;
+    loadedAt?: string;
+    data?: any;
+  }>({});
+
+  const [formData, setFormData] = useState<FormData>({
+    brand: '',
+    model: '',
+    cpu: '',
+    ram: '',
+    gpu: '',
+    storage: '',
+    display: '',
+    condition: 'New',
+    price: '',
+    description: '',
+  });
+  
+  const [scannerData, setScannerData] = useState<PcSpec | null>(null);
+
+  // Check for scanner data on component mount
+  useEffect(() => {
+    const fetchScannerData = async () => {
+      setIsLoading(true);
+      setError(null);
+      
+      try {
+        // Check if we have scanner data in the URL
+        const params = new URLSearchParams(window.location.search);
+        const scanId = params.get('scanId');
+        
+        console.log('🔍 Scan ID from URL:', scanId);
+        
+        setDebugInfo(prev => ({
+          ...prev,
+          scanId: scanId || 'none',
+          loadedAt: new Date().toISOString()
+        }));
+        
+        if (scanId) {
+          console.log(`🔄 Loading scan data for ID: ${scanId}`);
+          
+          try {
+            // Add a timestamp to prevent caching issues
+            const timestamp = new Date().getTime();
+            const response = await fetch(`/api/scan/${scanId}?t=${timestamp}`, {
+              headers: {
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0'
+              }
+            });
+            
+            if (!response.ok) {
+              const errorText = await response.text();
+              console.error('❌ API Error Response:', errorText);
+              throw new Error(`Failed to fetch scan data: ${response.status} ${response.statusText}`);
+            }
+            
+            const responseData = await response.json();
+            console.log('📦 Fetched scan data:', responseData);
+            
+            // The actual scan data is in the 'data' property of the response
+            const scanData = responseData.data || responseData;
+            console.log('🔍 Raw scan data:', JSON.stringify(scanData, null, 2));
+            console.log('🔍 Scan_Time from API:', scanData.Scan_Time);
+            
+            setScannerData(scanData);
+            
+            // Format storage information
+            const storageInfo = (scanData.Storage || []).map((s: StorageItem) => 
+              `${s.Size_GB}GB ${s.Type} ${s.BusType}`
+            ).join(' + ');
+            
+            // Update form with scanner data
+            const newFormData = {
+              brand: scanData.Brand || '',
+              model: scanData.Model || '',
+              cpu: scanData.CPU || '',
+              ram: scanData.RAM_GB ? `${scanData.RAM_GB}GB ${scanData.RAM_Type || ''} ${scanData.RAM_Speed_MHz || ''}MHz` : '',
+              gpu: scanData.GPU || '',
+              storage: storageInfo,
+              display: scanData.Display_Resolution ? `${scanData.Display_Resolution} (${scanData.Screen_Size_inch || ''}")` : '',
+              condition: 'New',
+              price: '',
+              description: ''
+            };
+            
+            setFormData(newFormData);
+            console.log('✅ Form data updated with scan data');
+            
+            setDebugInfo(prev => ({
+              ...prev,
+              data: {
+                ...scanData,
+                Storage: scanData.Storage.map((s: StorageItem) => ({
+                  ...s,
+                  Size_GB: `${s.Size_GB}GB`
+                }))
+              }
+            }));
+          } catch (error) {
+            console.error('❌ Error fetching scan data:', error);
+            // Fall back to mock data if there's an error
+            console.log('⚠️ Falling back to mock data');
+            
+            const data = mockPcSpec;
+            setScannerData(data);
+            
+            const storageInfo = data.Storage.map((s: StorageItem) => 
+              `${s.Size_GB}GB ${s.Type} ${s.BusType}`
+            ).join(' + ');
+            
+            setFormData({
+              ...formData,
+              brand: data.Brand,
+              model: data.Model,
+              cpu: data.CPU,
+              ram: `${data.RAM_GB}GB ${data.RAM_Type} ${data.RAM_Speed_MHz}MHz`,
+              gpu: data.GPU,
+              storage: storageInfo,
+              display: `${data.Display_Resolution} (${data.Screen_Size_inch}")`
+            });
+            
+            setError('Failed to load scan data. Using sample data instead.');
+          }
+        } else {
+          console.log('ℹ️ No scan ID found in URL');
+        }
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        console.error('❌ Error loading scanner data:', error);
+        setError(`Failed to load scanner data: ${errorMessage}`);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    if (typeof window !== 'undefined') {
+      fetchScannerData();
+    }
+  }, [searchParams]);
+
+  function SpecItem({ label, value }: { label: string; value: string | number | undefined }) {
     return (
       <div className="rounded-lg border bg-white p-3">
         <div className="text-xs text-zinc-500">{label}</div>
         <div
           className="text-sm font-medium truncate sm:whitespace-normal sm:overflow-visible sm:text-clip"
-          title={value}
+          title={value?.toString()}
         >
           {value}
         </div>
@@ -166,13 +355,44 @@ export default function AttachListing() {
     setAttachedCount(images.length);
   }
 
+  if (error) {
+    return (
+      <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-6">
+        <div className="flex">
+          <div className="flex-shrink-0">
+            <svg className="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <div className="ml-3">
+            <h3 className="text-sm font-medium text-red-800">Error loading scanner data</h3>
+            <div className="mt-2 text-sm text-red-700">
+              <p>{error}</p>
+            </div>
+            <div className="mt-4">
+              <button
+                onClick={() => window.location.reload()}
+                className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+              >
+                <svg className="-ml-0.5 mr-1.5 h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
+                </svg>
+                Try Again
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-gray-900">Attach Listing</h1>
         <p className="text-sm text-zinc-500">Create a new product listing</p>
       </div>
-      <main className="mx-auto max-w-6xl px-6 py-8">
+      <main className="mx-auto max-w-6xl px-6 py-8 space-y-6">
         <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           <div className="rounded-xl border bg-white p-4 lg:col-span-2 xl:col-span-2">
             <div className="text-sm text-zinc-500">Model</div>
@@ -183,7 +403,7 @@ export default function AttachListing() {
           <div className="rounded-xl border bg-white p-4">
             <div className="text-sm text-zinc-500">CPU / RAM</div>
             <div className="text-lg font-semibold">
-              {sampleSpec.CPU.split(" ")[0]} · {ramSummary}
+              {scannerData?.CPU?.split(" ")[0] || 'N/A'} · {ramSummary}
             </div>
           </div>
           <div className="rounded-xl border bg-white p-4">
@@ -196,7 +416,7 @@ export default function AttachListing() {
           <div className="rounded-xl border bg-white p-4">
             <div className="text-sm text-zinc-500">Scan Time</div>
             <div className="text-lg font-semibold">
-              {formatScanTime(sampleSpec.Scan_Time)}
+              {scannerData?.Scan_Time ? formatScanTime(scannerData.Scan_Time) : 'N/A'}
             </div>
           </div>
         </section>
@@ -535,13 +755,46 @@ function StatCard({ title, value }: { title: string; value: string }) {
 }
 
 function formatScanTime(dateStr: string) {
-  const d = new Date(dateStr);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  const yyyy = d.getUTCFullYear();
-  const mm = pad(d.getUTCMonth() + 1);
-  const dd = pad(d.getUTCDate());
-  const hh = pad(d.getUTCHours());
-  const mi = pad(d.getUTCMinutes());
-  const ss = pad(d.getUTCSeconds());
-  return `${dd}/${mm}/${yyyy}, ${hh}:${mi}:${ss} UTC`;
+  try {
+    console.log('📅 Formatting date string:', dateStr);
+    
+    if (!dateStr) {
+      console.warn('⚠️ No date string provided to formatScanTime');
+      return 'N/A';
+    }
+    
+    // Create date object
+    const date = new Date(dateStr);
+    
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      console.error('❌ Invalid date string:', dateStr);
+      return 'Invalid date';
+    }
+    
+    // Format time in Ethiopian timezone (Africa/Addis_Ababa)
+    const etTime = date.toLocaleTimeString("en-ET", {
+      timeZone: "Africa/Addis_Ababa",
+      hour12: true,
+      hour: "numeric",
+      minute: "numeric",
+      second: "numeric"
+    });
+    
+    // Format date in Ethiopian timezone
+    const etDate = date.toLocaleDateString("en-ET", {
+      timeZone: "Africa/Addis_Ababa",
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    });
+    
+    const formattedDate = `${etDate}, ${etTime} (EAT)`;
+    console.log('✅ Formatted date:', formattedDate);
+    
+    return formattedDate;
+  } catch (error) {
+    console.error('❌ Error formatting date:', error);
+    return 'Error formatting date';
+  }
 }
