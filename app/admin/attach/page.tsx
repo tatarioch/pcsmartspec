@@ -39,6 +39,10 @@ interface FormData {
   gpu: string;
   storage: string;
   display: string;
+  cores?: string;
+  threads?: string;
+  baseSpeedMHz?: string;
+  os?: string;
   condition: string;
   price: string;
   description: string;
@@ -71,6 +75,7 @@ export default function AttachListing() {
   const [scannerData, setScannerData] = useState<PcSpec | null>(null);
   const [waitingForScan, setWaitingForScan] = useState<boolean>(false);
   const [refreshTick, setRefreshTick] = useState<number>(0);
+  const [editSpecs, setEditSpecs] = useState<boolean>(false);
 
   // Check for scanner data on component mount
   useEffect(() => {
@@ -139,6 +144,10 @@ export default function AttachListing() {
             gpu: scanData.GPU || '',
             storage: storageInfo,
             display: scanData.Display_Resolution ? `${scanData.Display_Resolution} (${scanData.Screen_Size_inch || ''}")` : '',
+            cores: scanData.Cores || '',
+            threads: scanData.Threads || '',
+            baseSpeedMHz: scanData.BaseSpeed_MHz || '',
+            os: scanData.OS || '',
             condition: 'New',
             price: '',
             description: ''
@@ -190,6 +199,10 @@ export default function AttachListing() {
               gpu: scanData.GPU || '',
               storage: storageInfo,
               display: scanData.Display_Resolution ? `${scanData.Display_Resolution} (${scanData.Screen_Size_inch || ''}")` : '',
+              cores: scanData.Cores || '',
+              threads: scanData.Threads || '',
+              baseSpeedMHz: scanData.BaseSpeed_MHz || '',
+              os: scanData.OS || '',
               condition: 'New',
               price: '',
               description: ''
@@ -590,29 +603,83 @@ export default function AttachListing() {
 
             {scannerData && (
               <div className="rounded-xl border bg-white p-5">
-                <h2 className="mb-4 text-base font-semibold">Spec Preview</h2>
+                <div className="mb-4 flex items-center justify-between">
+                  <h2 className="text-base font-semibold">Spec Preview</h2>
+                  <button
+                    type="button"
+                    onClick={() => setEditSpecs((v) => !v)}
+                    className="rounded-md border px-3 py-1 text-xs font-medium"
+                  >
+                    {editSpecs ? 'Done' : 'Edit Specs'}
+                  </button>
+                </div>
                 <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
-                  <SpecItem label="Brand" value={scannerData.Brand} />
-                  <SpecItem label="Model" value={scannerData.Model} />
-                  <SpecItem label="CPU" value={scannerData.CPU} />
-                  <SpecItem
-                    label="Cores / Threads"
-                    value={`${scannerData.Cores} / ${scannerData.Threads}`}
-                  />
-                  <SpecItem
-                    label="Base Speed"
-                    value={`${scannerData.BaseSpeed_MHz} MHz`}
-                  />
-                  <SpecItem
-                    label="RAM"
-                    value={`${scannerData.RAM_GB} GB ${scannerData.RAM_Type} @ ${scannerData.RAM_Speed_MHz} MHz`}
-                  />
-                  <SpecItem label="GPU" value={scannerData.GPU} />
-                  <SpecItem
-                    label="Display"
-                    value={`${scannerData.Display_Resolution} · ${scannerData.Screen_Size_inch}\"`}
-                  />
-                  <SpecItem label="OS" value={scannerData.OS} />
+                  {editSpecs ? (
+                    <>
+                      <div className="space-y-1">
+                        <div className="text-xs text-zinc-500">Brand</div>
+                        <input className="w-full rounded-md border p-2 text-sm" value={formData.brand}
+                          onChange={(e) => setFormData((f) => ({ ...f, brand: e.target.value }))} />
+                      </div>
+                      <div className="space-y-1">
+                        <div className="text-xs text-zinc-500">Model</div>
+                        <input className="w-full rounded-md border p-2 text-sm" value={formData.model}
+                          onChange={(e) => setFormData((f) => ({ ...f, model: e.target.value }))} />
+                      </div>
+                      <div className="space-y-1">
+                        <div className="text-xs text-zinc-500">CPU</div>
+                        <input className="w-full rounded-md border p-2 text-sm" value={formData.cpu}
+                          onChange={(e) => setFormData((f) => ({ ...f, cpu: e.target.value }))} />
+                      </div>
+                      <div className="space-y-1">
+                        <div className="text-xs text-zinc-500">Cores</div>
+                        <input className="w-full rounded-md border p-2 text-sm" value={formData.cores || ''}
+                          onChange={(e) => setFormData((f) => ({ ...f, cores: e.target.value }))} />
+                      </div>
+                      <div className="space-y-1">
+                        <div className="text-xs text-zinc-500">Threads</div>
+                        <input className="w-full rounded-md border p-2 text-sm" value={formData.threads || ''}
+                          onChange={(e) => setFormData((f) => ({ ...f, threads: e.target.value }))} />
+                      </div>
+                      <div className="space-y-1">
+                        <div className="text-xs text-zinc-500">Base Speed (MHz)</div>
+                        <input className="w-full rounded-md border p-2 text-sm" value={formData.baseSpeedMHz || ''}
+                          onChange={(e) => setFormData((f) => ({ ...f, baseSpeedMHz: e.target.value }))} />
+                      </div>
+                      <div className="space-y-1">
+                        <div className="text-xs text-zinc-500">RAM</div>
+                        <input className="w-full rounded-md border p-2 text-sm" value={formData.ram}
+                          onChange={(e) => setFormData((f) => ({ ...f, ram: e.target.value }))} />
+                      </div>
+                      <div className="space-y-1">
+                        <div className="text-xs text-zinc-500">GPU</div>
+                        <input className="w-full rounded-md border p-2 text-sm" value={formData.gpu}
+                          onChange={(e) => setFormData((f) => ({ ...f, gpu: e.target.value }))} />
+                      </div>
+                      <div className="space-y-1">
+                        <div className="text-xs text-zinc-500">Display</div>
+                        <input className="w-full rounded-md border p-2 text-sm" value={formData.display}
+                          onChange={(e) => setFormData((f) => ({ ...f, display: e.target.value }))} />
+                      </div>
+                      <div className="space-y-1">
+                        <div className="text-xs text-zinc-500">OS</div>
+                        <input className="w-full rounded-md border p-2 text-sm" value={formData.os || ''}
+                          onChange={(e) => setFormData((f) => ({ ...f, os: e.target.value }))} />
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <SpecItem label="Brand" value={formData.brand || scannerData.Brand} />
+                      <SpecItem label="Model" value={formData.model || scannerData.Model} />
+                      <SpecItem label="CPU" value={formData.cpu || scannerData.CPU} />
+                      <SpecItem label="Cores / Threads" value={`${formData.cores || scannerData.Cores} / ${formData.threads || scannerData.Threads}`} />
+                      <SpecItem label="Base Speed" value={`${formData.baseSpeedMHz || scannerData.BaseSpeed_MHz} MHz`} />
+                      <SpecItem label="RAM" value={formData.ram || `${scannerData.RAM_GB} GB ${scannerData.RAM_Type} @ ${scannerData.RAM_Speed_MHz} MHz`} />
+                      <SpecItem label="GPU" value={formData.gpu || scannerData.GPU} />
+                      <SpecItem label="Display" value={formData.display || `${scannerData.Display_Resolution} · ${scannerData.Screen_Size_inch}\"`} />
+                      <SpecItem label="OS" value={formData.os || scannerData.OS} />
+                    </>
+                  )}
                 </div>
                 <div className="mt-4">
                   <div className="text-sm font-medium">Storage</div>
