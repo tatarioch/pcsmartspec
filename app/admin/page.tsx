@@ -53,13 +53,11 @@ const sampleSpec: PcSpec = {
 };
 
 export default function AdminDashboard() {
-  const [images, setImages] = useState<string[]>([]);
   const [guaranteeMonths, setGuaranteeMonths] = useState<number>(12);
   const [guaranteeProvider, setGuaranteeProvider] =
     useState<string>("PCSmartSpec");
-  const [publishReady, setPublishReady] = useState<boolean>(false);
 
-  const [listPrice, setListPrice] = useState<number>(799);
+  const [listPrice, setListPrice] = useState<string | number>('');
   const [discountPct, setDiscountPct] = useState<number>(0);
   const [stock, setStock] = useState<number>(5);
 
@@ -82,42 +80,7 @@ export default function AdminDashboard() {
     return kinds.join(", ");
   }, []);
 
-  const mockSold = useMemo(
-    () => [
-      {
-        id: "ORD-1001",
-        model: sampleSpec.Model,
-        price: 799,
-        buyer: "A. Bekele",
-        date: "2025-10-12",
-      },
-      {
-        id: "ORD-1002",
-        model: sampleSpec.Model,
-        price: 789,
-        buyer: "M. Yusuf",
-        date: "2025-10-24",
-      },
-      {
-        id: "ORD-1003",
-        model: "HP 255 G8",
-        price: 550,
-        buyer: "S. Hailu",
-        date: "2025-11-01",
-      },
-    ],
-    []
-  );
-
-  function onSelectImages(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(e.target.files || []);
-    files.forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = () =>
-        setImages((prev) => [...prev, String(reader.result)]);
-      reader.readAsDataURL(file);
-    });
-  }
+  
 
   return (
     <div className="min-h-screen bg-zinc-50 text-zinc-900">
@@ -129,26 +92,14 @@ export default function AdminDashboard() {
             </div>
             <div>
               <h1 className="text-lg font-semibold">PCSmartSpec Admin</h1>
-              <p className="text-xs text-zinc-500">
-                Manage specs, media, guarantee, analytics, and sales
-              </p>
+              <p className="text-xs text-zinc-500">Dashboard</p>
             </div>
           </div>
-          <nav className="flex items-center gap-2">
-            <a
-              href="/"
-              className="rounded-md px-3 py-2 text-sm text-zinc-600 hover:bg-zinc-100"
-            >
-              Home
-            </a>
-            <button
-              onClick={() => setPublishReady((v) => !v)}
-              className={`rounded-md px-3 py-2 text-sm font-medium text-white ${
-                publishReady ? "bg-emerald-600" : "bg-zinc-900"
-              }`}
-            >
-              {publishReady ? "Ready to Publish" : "Mark as Ready"}
-            </button>
+          <nav className="flex items-center gap-1">
+            <a href="/admin" className="rounded-md px-3 py-2 text-sm hover:bg-zinc-100">Dashboard</a>
+            <a href="/admin/sold" className="rounded-md px-3 py-2 text-sm hover:bg-zinc-100">Sold</a>
+            <a href="/admin/analytics" className="rounded-md px-3 py-2 text-sm hover:bg-zinc-100">Analytics</a>
+            <a href="/admin/attach" className="rounded-md px-3 py-2 text-sm hover:bg-zinc-100">Attach</a>
           </nav>
         </div>
       </header>
@@ -199,12 +150,19 @@ export default function AdminDashboard() {
                   <div className="text-sm font-medium">Pricing</div>
                   <div className="grid grid-cols-3 gap-2">
                     <div className="col-span-2">
-                      <label className="mb-1 block text-xs text-zinc-500">List Price (USD)</label>
+                      <label className="mb-1 block text-xs text-zinc-500">List Price (ETB)</label>
                       <input
-                        type="number"
-                        min={0}
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
                         value={listPrice}
-                        onChange={(e) => setListPrice(Number(e.target.value))}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          // Allow empty string or numbers
+                          if (value === '' || /^\d+$/.test(value)) {
+                            setListPrice(value);
+                          }
+                        }}
                         className="w-full rounded-md border p-2 text-sm"
                       />
                     </div>
@@ -219,8 +177,10 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <div className="text-zinc-600">Final Price</div>
-                    <div className="font-semibold">${Math.max(0, Math.round(listPrice * (1 - discountPct / 100)))}</div>
+                    <div className="text-zinc-600">Final Price (ETB)</div>
+                    <div className="font-semibold">
+                      {listPrice === '' ? '0' : Math.max(0, Math.round(Number(listPrice) * (1 - discountPct / 100))).toLocaleString()}
+                    </div>
                   </div>
                   <div className="flex gap-2">
                     <button onClick={() => setDiscountPct((v) => v - 5)} className="rounded-md border px-3 py-2 text-sm">-5%</button>
@@ -291,8 +251,7 @@ export default function AdminDashboard() {
                 </div>
                 <div className="flex items-end">
                   <button
-                    className="w-full rounded-md bg-emerald-600 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
-                    disabled={!publishReady}
+                    className="w-full rounded-md bg-emerald-600 px-3 py-2 text-sm font-medium text-white"
                   >
                     Save Guarantee
                   </button>
@@ -303,73 +262,19 @@ export default function AdminDashboard() {
               </p>
             </div>
           </section>
-
           <aside className="space-y-6">
             <div className="rounded-xl border bg-white p-5">
-              <h2 className="mb-4 text-base font-semibold">Analytics</h2>
-              <div className="space-y-3">
-                <Bar label="Views" value={72} total={100} color="bg-blue-600" />
-                <Bar
-                  label="Saves"
-                  value={38}
-                  total={100}
-                  color="bg-emerald-600"
-                />
-                <Bar
-                  label="Share"
-                  value={22}
-                  total={100}
-                  color="bg-violet-600"
-                />
-                <Bar label="CTR" value={14} total={100} color="bg-amber-600" />
-              </div>
-              <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-                <StatCard title="Conversion" value="3.2%" />
-                <StatCard title="Avg. Price" value="$792" />
+              <h2 className="mb-4 text-base font-semibold">Shortcuts</h2>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <a href="/admin/attach" className="rounded-md border px-3 py-2 hover:bg-zinc-50">Create Listing</a>
+                <a href="/admin/sold" className="rounded-md border px-3 py-2 hover:bg-zinc-50">View Sales</a>
+                <a href="/admin/analytics" className="rounded-md border px-3 py-2 hover:bg-zinc-50">View Analytics</a>
+                <a href="/" className="rounded-md border px-3 py-2 hover:bg-zinc-50">Home</a>
               </div>
             </div>
-
-            <div className="rounded-xl border bg-white p-5">
-              <h2 className="mb-4 text-base font-semibold">Sold PCs</h2>
-              <div className="overflow-hidden rounded-md border">
-                <table className="w-full text-left text-sm">
-                  <thead className="bg-zinc-50 text-zinc-600">
-                    <tr>
-                      <th className="px-3 py-2">Order</th>
-                      <th className="px-3 py-2">Model</th>
-                      <th className="px-3 py-2">Buyer</th>
-                      <th className="px-3 py-2 text-right">Price</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {mockSold.map((row) => (
-                      <tr key={row.id} className="border-t">
-                        <td className="px-3 py-2">{row.id}</td>
-                        <td className="px-3 py-2">{row.model}</td>
-                        <td className="px-3 py-2">{row.buyer}</td>
-                        <td className="px-3 py-2 text-right">${row.price}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* Other Shops removed - seller-focused UI only */}
           </aside>
         </div>
 
-        <div className="mt-8 flex items-center justify-end gap-3">
-          <button className="rounded-md border px-4 py-2 text-sm font-medium">
-            Save Draft
-          </button>
-          <button
-            className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-            disabled={!publishReady}
-          >
-            Publish Listing
-          </button>
-        </div>
       </main>
     </div>
   );

@@ -60,7 +60,7 @@ export default function AttachListing() {
   const [title, setTitle] = useState<string>(
     `${sampleSpec.Brand} ${sampleSpec.Model}`
   );
-  const [price, setPrice] = useState<number>(799);
+  const [price, setPrice] = useState<number | string>(799);
   const [condition, setCondition] = useState<string>("New");
   const [specialFeatures, setSpecialFeatures] = useState<string[]>([]);
   const [specialInput, setSpecialInput] = useState<string>("");
@@ -101,7 +101,8 @@ export default function AttachListing() {
     []
   );
   const ramSummary = useMemo(
-    () => `${sampleSpec.RAM_GB}GB ${sampleSpec.RAM_Type} ${sampleSpec.RAM_Speed_MHz}MHz`,
+    () =>
+      `${sampleSpec.RAM_GB}GB ${sampleSpec.RAM_Type} ${sampleSpec.RAM_Speed_MHz}MHz`,
     []
   );
   const storageKinds = useMemo(() => {
@@ -162,7 +163,9 @@ export default function AttachListing() {
             </div>
             <div>
               <h1 className="text-lg font-semibold">Attach Listing</h1>
-              <p className="text-xs text-zinc-500">Attach photos and set guarantee before publishing</p>
+              <p className="text-xs text-zinc-500">
+                Attach photos and set guarantee before publishing
+              </p>
             </div>
           </div>
           <nav className="flex items-center gap-2">
@@ -193,7 +196,8 @@ export default function AttachListing() {
           <div className="rounded-xl border bg-white p-4">
             <div className="text-sm text-zinc-500">Storage Total</div>
             <div className="text-lg font-semibold">
-              {totalStorageGB.toFixed(0)} GB{storageKinds ? ` · ${storageKinds}` : ""}
+              {totalStorageGB.toFixed(0)} GB
+              {storageKinds ? ` · ${storageKinds}` : ""}
             </div>
           </div>
           <div className="rounded-xl border bg-white p-4">
@@ -218,17 +222,27 @@ export default function AttachListing() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="block text-sm text-zinc-600">Price (USD)</label>
+                  <label className="block text-sm text-zinc-600">
+                    Price (ETB)
+                  </label>
                   <input
                     type="number"
-                    min={0}
                     value={price}
-                    onChange={(e) => setPrice(Number(e.target.value))}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === "") {
+                        setPrice("");
+                      } else {
+                        setPrice(Number(val));
+                      }
+                    }}
                     className="w-full rounded-md border p-2 text-sm"
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="block text-sm text-zinc-600">Condition</label>
+                  <label className="block text-sm text-zinc-600">
+                    Condition
+                  </label>
                   <select
                     value={condition}
                     onChange={(e) => setCondition(e.target.value)}
@@ -241,7 +255,9 @@ export default function AttachListing() {
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <label className="block text-sm text-zinc-600">Battery Life Expectancy</label>
+                  <label className="block text-sm text-zinc-600">
+                    Battery Life Expectancy
+                  </label>
                   <select
                     value={batteryRange}
                     onChange={(e) => setBatteryRange(e.target.value)}
@@ -263,7 +279,9 @@ export default function AttachListing() {
                   )}
                 </div>
                 <div className="space-y-2 sm:col-span-2">
-                  <label className="block text-sm text-zinc-600">Special Features</label>
+                  <label className="block text-sm text-zinc-600">
+                    Special Features
+                  </label>
                   <div className="flex gap-2">
                     <input
                       value={specialInput}
@@ -288,7 +306,10 @@ export default function AttachListing() {
                   {!!specialFeatures.length && (
                     <div className="mt-2 flex flex-wrap gap-2">
                       {specialFeatures.map((f) => (
-                        <span key={f} className="inline-flex items-center gap-2 rounded-full border bg-zinc-50 px-3 py-1 text-xs">
+                        <span
+                          key={f}
+                          className="inline-flex items-center gap-2 rounded-full border bg-zinc-50 px-3 py-1 text-xs"
+                        >
                           {f}
                           <button
                             type="button"
@@ -303,7 +324,9 @@ export default function AttachListing() {
                     </div>
                   )}
                   <div className="mt-3">
-                    <div className="mb-2 text-xs text-zinc-500">Suggestions</div>
+                    <div className="mb-2 text-xs text-zinc-500">
+                      Suggestions
+                    </div>
                     <div className="flex flex-wrap gap-2">
                       {suggestions.map((s) => (
                         <button
@@ -319,7 +342,9 @@ export default function AttachListing() {
                   </div>
                 </div>
               </div>
-              <p className="mt-3 text-xs text-zinc-500">UI-only; no backend calls.</p>
+              <p className="mt-3 text-xs text-zinc-500">
+                UI-only; no backend calls.
+              </p>
             </div>
 
             <div className="rounded-xl border bg-white p-5">
@@ -352,7 +377,9 @@ export default function AttachListing() {
                 <ul className="mt-2 divide-y rounded-md border bg-zinc-50">
                   {sampleSpec.Storage.map((s, i) => (
                     <li key={i} className="grid grid-cols-4 gap-2 p-3 text-sm">
-                      <div className="col-span-2 truncate sm:whitespace-normal sm:overflow-visible sm:text-clip">{s.Model}</div>
+                      <div className="col-span-2 truncate sm:whitespace-normal sm:overflow-visible sm:text-clip">
+                        {s.Model}
+                      </div>
                       <div>
                         {s.Type}/{s.BusType}
                       </div>
@@ -376,10 +403,16 @@ export default function AttachListing() {
                 />
                 <button
                   onClick={onAttach}
-                  className={`rounded-md px-3 py-2 text-sm font-medium text-white disabled:opacity-50 ${attached ? "bg-emerald-600" : "bg-zinc-900"}`}
+                  className={`rounded-md px-3 py-2 text-sm font-medium text-white disabled:opacity-50 ${
+                    attached ? "bg-emerald-600" : "bg-zinc-900"
+                  }`}
                   disabled={!images.length}
                 >
-                  {attached ? `Attached ${attachedCount} photo${attachedCount === 1 ? "" : "s"}` : "Attach to Listing"}
+                  {attached
+                    ? `Attached ${attachedCount} photo${
+                        attachedCount === 1 ? "" : "s"
+                      }`
+                    : "Attach to Listing"}
                 </button>
               </div>
               <div className="mt-2 text-xs text-zinc-500">
@@ -387,13 +420,17 @@ export default function AttachListing() {
               </div>
               {attached && (
                 <div className="mt-3 rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
-                  Photos attached to the draft listing. You can still remove or add before publishing.
+                  Photos attached to the draft listing. You can still remove or
+                  add before publishing.
                 </div>
               )}
               {!!images.length && (
                 <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
                   {images.map((src, idx) => (
-                    <div key={idx} className="relative overflow-hidden rounded-lg border bg-white">
+                    <div
+                      key={idx}
+                      className="relative overflow-hidden rounded-lg border bg-white"
+                    >
                       <button
                         type="button"
                         onClick={() => removeImage(idx)}
@@ -439,9 +476,7 @@ export default function AttachListing() {
                   />
                 </div>
                 <div className="flex items-end">
-                  <button
-                    className="w-full rounded-md bg-emerald-600 px-3 py-2 text-sm font-medium text-white"
-                  >
+                  <button className="w-full rounded-md bg-emerald-600 px-3 py-2 text-sm font-medium text-white">
                     Save Guarantee
                   </button>
                 </div>
@@ -473,7 +508,10 @@ function SpecItem({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-lg border bg-white p-3">
       <div className="text-xs text-zinc-500">{label}</div>
-      <div className="text-sm font-medium truncate sm:whitespace-normal sm:overflow-visible sm:text-clip" title={value}>
+      <div
+        className="text-sm font-medium truncate sm:whitespace-normal sm:overflow-visible sm:text-clip"
+        title={value}
+      >
         {value}
       </div>
     </div>
