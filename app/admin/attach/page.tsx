@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams, ReadonlyURLSearchParams } from "next/navigation";
 
 interface StorageItem {
   Model: string;
@@ -28,56 +28,7 @@ interface PcSpec {
   Scan_Time: string;
 }
 
-// Mock data that matches the Python scanner output
-const mockPcSpec: PcSpec = {
-  Brand: "HP",
-  Model: "Victus by HP Gaming Laptop 15-fa1xxx",
-  CPU: "13th Gen Intel(R) Core(TM) i5-13420H",
-  Cores: "8",
-  Threads: "12",
-  BaseSpeed_MHz: "2100",
-  RAM_GB: "16",
-  RAM_Speed_MHz: "3200",
-  RAM_Type: "DDR4",
-  Storage: [
-    {
-      Model: "PSENN512GA87FC0",
-      Size_GB: 512.11,
-      Type: "SSD",
-      BusType: "NVMe"
-    }
-  ],
-  GPU: "Intel(R) UHD Graphics, NVIDIA GeForce RTX 2050",
-  Display_Resolution: "1920x1080",
-  Screen_Size_inch: 15.6,
-  OS: "Microsoft Windows 11 Home",
-  Scan_Time: new Date().toISOString()
-};
-
-const sampleSpec: PcSpec = {
-  Brand: "HP",
-  Model: "Victus by HP Gaming Laptop 15-fa1xxx",
-  CPU: "13th Gen Intel(R) Core(TM) i5-13420H",
-  Cores: "8",
-  Threads: "12",
-  BaseSpeed_MHz: "2100",
-  RAM_GB: "16",
-  RAM_Speed_MHz: "3200",
-  RAM_Type: "DDR4",
-  Storage: [
-    {
-      Model: "PSENN512GA87FC0",
-      Size_GB: 512.11,
-      Type: "SSD",
-      BusType: "NVMe",
-    },
-  ],
-  GPU: "Intel(R) UHD Graphics, NVIDIA GeForce RTX 2050",
-  Display_Resolution: "1920x1080",
-  Screen_Size_inch: 15.6,
-  OS: "Microsoft Windows 11 Home",
-  Scan_Time: "2025-11-01T13:53:16.784566",
-};
+//
 
 // Add this interface at the top with other interfaces
 interface FormData {
@@ -95,7 +46,7 @@ interface FormData {
 
 export default function AttachListing() {
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const searchParams = useSearchParams() as ReadonlyURLSearchParams;
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [debugInfo, setDebugInfo] = useState<{
@@ -118,6 +69,8 @@ export default function AttachListing() {
   });
   
   const [scannerData, setScannerData] = useState<PcSpec | null>(null);
+  const [waitingForScan, setWaitingForScan] = useState<boolean>(false);
+  const [refreshTick, setRefreshTick] = useState<number>(0);
 
   // Check for scanner data on component mount
   useEffect(() => {
@@ -128,7 +81,8 @@ export default function AttachListing() {
       try {
         // Check if we have scanner data in the URL
         const params = new URLSearchParams(window.location.search);
-        const scanId = params.get('scanId');
+        // Accept multiple param names from external tools
+        const scanId = params.get('scanId') || params.get('pc_id') || params.get('id');
         
         console.log('🔍 Scan ID from URL:', scanId);
         
@@ -140,40 +94,92 @@ export default function AttachListing() {
         
         if (scanId) {
           console.log(`🔄 Loading scan data for ID: ${scanId}`);
-          
-          try {
-            // Add a timestamp to prevent caching issues
-            const timestamp = new Date().getTime();
-            const response = await fetch(`/api/scan/${scanId}?t=${timestamp}`, {
-              headers: {
-                'Cache-Control': 'no-cache, no-store, must-revalidate',
-                'Pragma': 'no-cache',
-                'Expires': '0'
-              }
-            });
-            
-            if (!response.ok) {
-              const errorText = await response.text();
-              console.error('❌ API Error Response:', errorText);
-              throw new Error(`Failed to fetch scan data: ${response.status} ${response.statusText}`);
+          // Add a timestamp to prevent caching issues
+          const timestamp = new Date().getTime();
+          const response = await fetch(`/api/scan/${scanId}?t=${timestamp}`, {
+            headers: {
+              'Cache-Control': 'no-cache, no-store, must-revalidate',
+              'Pragma': 'no-cache',
+              'Expires': '0'
             }
-            
-            const responseData = await response.json();
-            console.log('📦 Fetched scan data:', responseData);
-            
-            // The actual scan data is in the 'data' property of the response
-            const scanData = responseData.data || responseData;
-            console.log('🔍 Raw scan data:', JSON.stringify(scanData, null, 2));
-            console.log('🔍 Scan_Time from API:', scanData.Scan_Time);
-            
+          });
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error('❌ API Error Response:', errorText);
+            // Surface 404 specifically so outer catch can handle it
+            if (response.status === 404) {
+              throw new Error('404: Scan not found');
+            }
+            throw new Error(`Failed to fetch scan data: ${response.status} ${response.statusText}`);
+          }
+
+          const responseData = await response.json();
+          console.log('📦 Fetched scan data:', responseData);
+
+          // The actual scan data is in the 'data' property of the response
+          const scanData = responseData.data || responseData;
+          console.log('🔍 Raw scan data:', JSON.stringify(scanData, null, 2));
+          console.log('🔍 Scan_Time from API:', scanData.Scan_Time);
+
+          setScannerData(scanData);
+          setWaitingForScan(false);
+
+          // Format storage information
+          const storageInfo = (scanData.Storage || []).map((s: StorageItem) =>
+            `${s.Size_GB}GB ${s.Type} ${s.BusType}`
+          ).join(' + ');
+
+          // Update form with scanner data
+          const newFormData = {
+            brand: scanData.Brand || '',
+            model: scanData.Model || '',
+            cpu: scanData.CPU || '',
+            ram: scanData.RAM_GB ? `${scanData.RAM_GB}GB ${scanData.RAM_Type || ''} ${scanData.RAM_Speed_MHz || ''}MHz` : '',
+            gpu: scanData.GPU || '',
+            storage: storageInfo,
+            display: scanData.Display_Resolution ? `${scanData.Display_Resolution} (${scanData.Screen_Size_inch || ''}")` : '',
+            condition: 'New',
+            price: '',
+            description: ''
+          };
+
+          setFormData(newFormData);
+          console.log('✅ Form data updated with scan data');
+
+          setDebugInfo(prev => ({
+            ...prev,
+            data: {
+              ...scanData,
+              Storage: scanData.Storage.map((s: StorageItem) => ({
+                ...s,
+                Size_GB: `${s.Size_GB}GB`
+              }))
+            }
+          }));
+        } else {
+          console.log('ℹ️ No scan ID found in URL, trying latest scan');
+          // Try to get the latest available scan for cross-device flow
+          const timestamp = new Date().getTime();
+          const latestResp = await fetch(`/api/scan/latest?t=${timestamp}`, {
+            headers: {
+              'Cache-Control': 'no-cache, no-store, must-revalidate',
+              'Pragma': 'no-cache',
+              'Expires': '0'
+            }
+          });
+          if (latestResp.ok) {
+            const latestData = await latestResp.json();
+            const scanData = latestData.data || latestData;
+            console.log('📦 Latest scan data:', scanData);
+
             setScannerData(scanData);
-            
-            // Format storage information
-            const storageInfo = (scanData.Storage || []).map((s: StorageItem) => 
+            setWaitingForScan(false);
+
+            const storageInfo = (scanData.Storage || []).map((s: StorageItem) =>
               `${s.Size_GB}GB ${s.Type} ${s.BusType}`
             ).join(' + ');
-            
-            // Update form with scanner data
+
             const newFormData = {
               brand: scanData.Brand || '',
               model: scanData.Model || '',
@@ -186,52 +192,39 @@ export default function AttachListing() {
               price: '',
               description: ''
             };
-            
             setFormData(newFormData);
-            console.log('✅ Form data updated with scan data');
-            
-            setDebugInfo(prev => ({
-              ...prev,
-              data: {
-                ...scanData,
-                Storage: scanData.Storage.map((s: StorageItem) => ({
-                  ...s,
-                  Size_GB: `${s.Size_GB}GB`
-                }))
-              }
-            }));
-          } catch (error) {
-            console.error('❌ Error fetching scan data:', error);
-            // Fall back to mock data if there's an error
-            console.log('⚠️ Falling back to mock data');
-            
-            const data = mockPcSpec;
-            setScannerData(data);
-            
-            const storageInfo = data.Storage.map((s: StorageItem) => 
-              `${s.Size_GB}GB ${s.Type} ${s.BusType}`
-            ).join(' + ');
-            
-            setFormData({
-              ...formData,
-              brand: data.Brand,
-              model: data.Model,
-              cpu: data.CPU,
-              ram: `${data.RAM_GB}GB ${data.RAM_Type} ${data.RAM_Speed_MHz}MHz`,
-              gpu: data.GPU,
-              storage: storageInfo,
-              display: `${data.Display_Resolution} (${data.Screen_Size_inch}")`
-            });
-            
-            setError('Failed to load scan data. Using sample data instead.');
+          } else {
+            setWaitingForScan(true);
+            setScannerData(null);
           }
-        } else {
-          console.log('ℹ️ No scan ID found in URL');
         }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         console.error('❌ Error loading scanner data:', error);
-        setError(`Failed to load scanner data: ${errorMessage}`);
+
+        if (typeof errorMessage === 'string' && errorMessage.includes('404')) {
+          // Treat 404 as "waiting for a new scan" instead of an error
+          setError(null);
+          setWaitingForScan(true);
+          setScannerData(null);
+          setFormData({
+            brand: '',
+            model: '',
+            cpu: '',
+            ram: '',
+            gpu: '',
+            storage: '',
+            display: '',
+            condition: 'New',
+            price: '',
+            description: ''
+          });
+        } else {
+          // Other errors: show error message, do not populate mock data
+          setScannerData(null);
+          setWaitingForScan(false);
+          setError(`Failed to load scanner data: ${errorMessage}`);
+        }
       } finally {
         setIsLoading(false);
       }
@@ -240,7 +233,13 @@ export default function AttachListing() {
     if (typeof window !== 'undefined') {
       fetchScannerData();
     }
-  }, [searchParams]);
+  }, [searchParams, refreshTick]);
+
+  useEffect(() => {
+    if (!waitingForScan) return;
+    const id = setInterval(() => setRefreshTick((t) => t + 1), 5000);
+    return () => clearInterval(id);
+  }, [waitingForScan]);
 
   function SpecItem({ label, value }: { label: string; value: string | number | undefined }) {
     return (
@@ -259,9 +258,7 @@ export default function AttachListing() {
   const [guaranteeMonths, setGuaranteeMonths] = useState<number>(12);
   const [guaranteeProvider, setGuaranteeProvider] =
     useState<string>("PCSmartSpec");
-  const [title, setTitle] = useState<string>(
-    `${sampleSpec.Brand} ${sampleSpec.Model}`
-  );
+  const [title, setTitle] = useState<string>("");
   const [price, setPrice] = useState<number | string>(799);
   const [condition, setCondition] = useState<string>("New");
   const [specialFeatures, setSpecialFeatures] = useState<string[]>([]);
@@ -299,24 +296,26 @@ export default function AttachListing() {
   );
 
   const totalStorageGB = useMemo(
-    () => sampleSpec.Storage.reduce((sum, s) => sum + s.Size_GB, 0),
-    []
+    () => (scannerData?.Storage || []).reduce((sum, s) => sum + Number(s.Size_GB || 0), 0),
+    [scannerData]
   );
   const ramSummary = useMemo(
     () =>
-      `${sampleSpec.RAM_GB}GB ${sampleSpec.RAM_Type} ${sampleSpec.RAM_Speed_MHz}MHz`,
-    []
+      scannerData?.RAM_GB
+        ? `${scannerData.RAM_GB}GB ${scannerData.RAM_Type || ''} ${scannerData.RAM_Speed_MHz || ''}MHz`.trim()
+        : 'N/A',
+    [scannerData]
   );
   const storageKinds = useMemo(() => {
     const kinds = Array.from(
       new Set(
-        (sampleSpec.Storage || []).map((s) =>
+        (scannerData?.Storage || []).map((s) =>
           [s.Type, s.BusType].filter(Boolean).join(" ")
         )
       )
     );
-    return kinds.join(", ");
-  }, []);
+    return kinds.filter(Boolean).join(", ");
+  }, [scannerData]);
 
   function onSelectImages(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files || []);
@@ -392,12 +391,36 @@ export default function AttachListing() {
         <h1 className="text-2xl font-semibold text-gray-900">Attach Listing</h1>
         <p className="text-sm text-zinc-500">Create a new product listing</p>
       </div>
+      {waitingForScan && (
+        <div className="mb-6 rounded-md border border-blue-200 bg-blue-50 p-4 text-blue-800">
+          <div className="flex items-start gap-3">
+            <svg className="h-5 w-5 mt-0.5 text-blue-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M18 10A8 8 0 11.001 10 8 8 0 0118 10zm-8-5a1 1 0 00-1 1v3.382l-1.724 1.724a1 1 0 101.414 1.414l2-2A1 1 0 0010 10V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+            <div>
+              <div className="text-sm font-medium">Waiting for a PC scan…</div>
+              <div className="mt-1 text-sm">Once a new PC is scanned and uploaded, this page will populate automatically. You can also retry manually.</div>
+              <div className="mt-3">
+                <button
+                  onClick={() => {
+                    setIsLoading(true);
+                    setRefreshTick((t) => t + 1);
+                  }}
+                  className="inline-flex items-center rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700"
+                >
+                  Retry Fetch
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       <main className="mx-auto max-w-6xl px-6 py-8 space-y-6">
         <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           <div className="rounded-xl border bg-white p-4 lg:col-span-2 xl:col-span-2">
             <div className="text-sm text-zinc-500">Model</div>
             <div className="text-lg font-semibold truncate sm:whitespace-normal sm:overflow-visible sm:text-clip">
-              {sampleSpec.Model}
+              {scannerData?.Model || 'N/A'}
             </div>
           </div>
           <div className="rounded-xl border bg-white p-4">
@@ -409,7 +432,7 @@ export default function AttachListing() {
           <div className="rounded-xl border bg-white p-4">
             <div className="text-sm text-zinc-500">Storage Total</div>
             <div className="text-lg font-semibold">
-              {totalStorageGB.toFixed(0)} GB
+              {totalStorageGB ? `${totalStorageGB.toFixed(0)} GB` : 'N/A'}
               {storageKinds ? ` · ${storageKinds}` : ""}
             </div>
           </div>
@@ -560,48 +583,50 @@ export default function AttachListing() {
               </p>
             </div>
 
-            <div className="rounded-xl border bg-white p-5">
-              <h2 className="mb-4 text-base font-semibold">Spec Preview</h2>
-              <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
-                <SpecItem label="Brand" value={sampleSpec.Brand} />
-                <SpecItem label="Model" value={sampleSpec.Model} />
-                <SpecItem label="CPU" value={sampleSpec.CPU} />
-                <SpecItem
-                  label="Cores / Threads"
-                  value={`${sampleSpec.Cores} / ${sampleSpec.Threads}`}
-                />
-                <SpecItem
-                  label="Base Speed"
-                  value={`${sampleSpec.BaseSpeed_MHz} MHz`}
-                />
-                <SpecItem
-                  label="RAM"
-                  value={`${sampleSpec.RAM_GB} GB ${sampleSpec.RAM_Type} @ ${sampleSpec.RAM_Speed_MHz} MHz`}
-                />
-                <SpecItem label="GPU" value={sampleSpec.GPU} />
-                <SpecItem
-                  label="Display"
-                  value={`${sampleSpec.Display_Resolution} · ${sampleSpec.Screen_Size_inch}\"`}
-                />
-                <SpecItem label="OS" value={sampleSpec.OS} />
+            {scannerData && (
+              <div className="rounded-xl border bg-white p-5">
+                <h2 className="mb-4 text-base font-semibold">Spec Preview</h2>
+                <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+                  <SpecItem label="Brand" value={scannerData.Brand} />
+                  <SpecItem label="Model" value={scannerData.Model} />
+                  <SpecItem label="CPU" value={scannerData.CPU} />
+                  <SpecItem
+                    label="Cores / Threads"
+                    value={`${scannerData.Cores} / ${scannerData.Threads}`}
+                  />
+                  <SpecItem
+                    label="Base Speed"
+                    value={`${scannerData.BaseSpeed_MHz} MHz`}
+                  />
+                  <SpecItem
+                    label="RAM"
+                    value={`${scannerData.RAM_GB} GB ${scannerData.RAM_Type} @ ${scannerData.RAM_Speed_MHz} MHz`}
+                  />
+                  <SpecItem label="GPU" value={scannerData.GPU} />
+                  <SpecItem
+                    label="Display"
+                    value={`${scannerData.Display_Resolution} · ${scannerData.Screen_Size_inch}\"`}
+                  />
+                  <SpecItem label="OS" value={scannerData.OS} />
+                </div>
+                <div className="mt-4">
+                  <div className="text-sm font-medium">Storage</div>
+                  <ul className="mt-2 divide-y rounded-md border bg-zinc-50">
+                    {(scannerData.Storage || []).map((s, i) => (
+                      <li key={i} className="grid grid-cols-4 gap-2 p-3 text-sm">
+                        <div className="col-span-2 truncate sm:whitespace-normal sm:overflow-visible sm:text-clip">
+                          {s.Model}
+                        </div>
+                        <div>
+                          {s.Type}/{s.BusType}
+                        </div>
+                        <div className="text-right">{s.Size_GB} GB</div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </div>
-              <div className="mt-4">
-                <div className="text-sm font-medium">Storage</div>
-                <ul className="mt-2 divide-y rounded-md border bg-zinc-50">
-                  {sampleSpec.Storage.map((s, i) => (
-                    <li key={i} className="grid grid-cols-4 gap-2 p-3 text-sm">
-                      <div className="col-span-2 truncate sm:whitespace-normal sm:overflow-visible sm:text-clip">
-                        {s.Model}
-                      </div>
-                      <div>
-                        {s.Type}/{s.BusType}
-                      </div>
-                      <div className="text-right">{s.Size_GB} GB</div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
+            )}
 
             <div className="rounded-xl border bg-white p-5">
               <h2 className="mb-4 text-base font-semibold">Photos</h2>

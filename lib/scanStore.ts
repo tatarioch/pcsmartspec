@@ -84,3 +84,15 @@ export const deleteScan = async (id: string): Promise<void> => {
     await writeStore(store);
   }
 };
+
+export const getLatestScan = async (): Promise<ScanData | undefined> => {
+  const store = await readStore();
+  const entries = Object.values(store);
+  if (!entries.length) return undefined;
+  // Pick the most recent by createdAt (fallback to Scan_Time if needed)
+  return entries.sort((a, b) => {
+    const ta = Date.parse(a.createdAt || a.Scan_Time || '');
+    const tb = Date.parse(b.createdAt || b.Scan_Time || '');
+    return tb - ta;
+  })[0];
+};
