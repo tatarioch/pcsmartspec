@@ -8,54 +8,45 @@ export default function SoldPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-zinc-50 text-zinc-900">
-      <header className="sticky top-0 z-10 border-b bg-white/80 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <div>
-            <h1 className="text-lg font-semibold">Sales</h1>
-            <p className="text-xs text-zinc-500">Completed orders</p>
-          </div>
-          <nav className="flex items-center gap-1">
-            <a href="/admin" className="rounded-md px-3 py-2 text-sm hover:bg-zinc-100">Dashboard</a>
-            <a href="/admin/sold" className="rounded-md px-3 py-2 text-sm bg-zinc-900 text-white">Sold</a>
-            <a href="/admin/analytics" className="rounded-md px-3 py-2 text-sm hover:bg-zinc-100">Analytics</a>
-            <a href="/admin/attach" className="rounded-md px-3 py-2 text-sm hover:bg-zinc-100">Attach</a>
-          </nav>
+    <>
+      <div className="mb-6">
+        <h1 className="text-2xl font-semibold text-gray-900">Sales</h1>
+        <p className="text-sm text-zinc-500">Completed orders</p>
+      </div>
+      <main className="py-4">
+        <section className="grid grid-cols-1 gap-4">
+          <div className="rounded-xl border bg-white p-5">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-base font-semibold">Recent Orders</h2>
+          <div className="text-sm text-zinc-500">{rows.length} results</div>
         </div>
-      </header>
-
-      <main className="mx-auto max-w-7xl px-6 py-8">
-        <div className="rounded-xl border bg-white p-5">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-base font-semibold">Recent Orders</h2>
-            <div className="text-sm text-zinc-500">{rows.length} results</div>
-          </div>
-          <div className="overflow-hidden rounded-md border">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-zinc-50 text-zinc-600">
-                <tr>
-                  <th className="px-3 py-2">Order</th>
-                  <th className="px-3 py-2">Model</th>
-                  <th className="px-3 py-2">Buyer</th>
-                  <th className="px-3 py-2">Date</th>
-                  <th className="px-3 py-2 text-right">Price</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((r) => (
-                  <tr key={r.id} className="border-t">
-                    <td className="px-3 py-2">{r.id}</td>
-                    <td className="px-3 py-2">{r.model}</td>
-                    <td className="px-3 py-2">{r.buyer}</td>
-                    <td className="px-3 py-2">{r.date}</td>
-                    <td className="px-3 py-2 text-right">${r.price}</td>
+            <div className="overflow-hidden rounded-md border">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-zinc-50 text-zinc-600">
+                  <tr>
+                    <th className="px-3 py-2">Order</th>
+                    <th className="px-3 py-2">Model</th>
+                    <th className="px-3 py-2">Buyer</th>
+                    <th className="px-3 py-2">Date</th>
+                    <th className="px-3 py-2 text-right">Price</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {rows.map((r) => (
+                    <tr key={r.id} className="border-t">
+                      <td className="px-3 py-2">{r.id}</td>
+                      <td className="px-3 py-2">{r.model}</td>
+                      <td className="px-3 py-2">{r.buyer}</td>
+                      <td className="px-3 py-2">{r.date}</td>
+                      <td className="px-3 py-2 text-right">${r.price}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
+        </section>
       </main>
-    </div>
+    </>
   );
 }

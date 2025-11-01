@@ -80,31 +80,13 @@ export default function AdminDashboard() {
     return kinds.join(", ");
   }, []);
 
-  
-
   return (
-    <div className="min-h-screen bg-zinc-50 text-zinc-900">
-      <header className="sticky top-0 z-10 border-b bg-white/80 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-black text-white">
-              PS
-            </div>
-            <div>
-              <h1 className="text-lg font-semibold">PCSmartSpec Admin</h1>
-              <p className="text-xs text-zinc-500">Dashboard</p>
-            </div>
-          </div>
-          <nav className="flex items-center gap-1">
-            <a href="/admin" className="rounded-md px-3 py-2 text-sm hover:bg-zinc-100">Dashboard</a>
-            <a href="/admin/sold" className="rounded-md px-3 py-2 text-sm hover:bg-zinc-100">Sold</a>
-            <a href="/admin/analytics" className="rounded-md px-3 py-2 text-sm hover:bg-zinc-100">Analytics</a>
-            <a href="/admin/attach" className="rounded-md px-3 py-2 text-sm hover:bg-zinc-100">Attach</a>
-          </nav>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-7xl px-6 py-8">
+    <>
+      <div className="mb-6">
+        <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
+        <p className="text-sm text-zinc-500">Welcome back, Admin</p>
+      </div>
+      <main className="py-4">
         <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
           <div className="rounded-xl border bg-white p-4">
             <div className="text-sm text-zinc-500">Active Listings</div>
@@ -145,7 +127,6 @@ export default function AdminDashboard() {
                     <button className="rounded-md border px-3 py-2 text-sm">Feature Listing</button>
                   </div>
                 </div>
-
                 <div className="space-y-3">
                   <div className="text-sm font-medium">Pricing</div>
                   <div className="grid grid-cols-3 gap-2">
@@ -274,9 +255,8 @@ export default function AdminDashboard() {
             </div>
           </aside>
         </div>
-
       </main>
-    </div>
+    </>
   );
 }
 

@@ -53,6 +53,19 @@ const sampleSpec: PcSpec = {
 };
 
 export default function AttachListing() {
+  function SpecItem({ label, value }: { label: string; value: string }) {
+    return (
+      <div className="rounded-lg border bg-white p-3">
+        <div className="text-xs text-zinc-500">{label}</div>
+        <div
+          className="text-sm font-medium truncate sm:whitespace-normal sm:overflow-visible sm:text-clip"
+          title={value}
+        >
+          {value}
+        </div>
+      </div>
+    );
+  }
   const [images, setImages] = useState<string[]>([]);
   const [guaranteeMonths, setGuaranteeMonths] = useState<number>(12);
   const [guaranteeProvider, setGuaranteeProvider] =
@@ -154,31 +167,11 @@ export default function AttachListing() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 text-zinc-900">
-      <header className="sticky top-0 z-10 border-b bg-white/80 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-black text-white">
-              PS
-            </div>
-            <div>
-              <h1 className="text-lg font-semibold">Attach Listing</h1>
-              <p className="text-xs text-zinc-500">
-                Attach photos and set guarantee before publishing
-              </p>
-            </div>
-          </div>
-          <nav className="flex items-center gap-2">
-            <a
-              href="/admin"
-              className="rounded-md px-3 py-2 text-sm text-zinc-600 hover:bg-zinc-100"
-            >
-              Dashboard
-            </a>
-          </nav>
-        </div>
-      </header>
-
+    <div>
+      <div className="mb-6">
+        <h1 className="text-2xl font-semibold text-gray-900">Attach Listing</h1>
+        <p className="text-sm text-zinc-500">Create a new product listing</p>
+      </div>
       <main className="mx-auto max-w-6xl px-6 py-8">
         <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           <div className="rounded-xl border bg-white p-4 lg:col-span-2 xl:col-span-2">
@@ -500,20 +493,6 @@ export default function AttachListing() {
           </button>
         </div>
       </main>
-    </div>
-  );
-}
-
-function SpecItem({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-lg border bg-white p-3">
-      <div className="text-xs text-zinc-500">{label}</div>
-      <div
-        className="text-sm font-medium truncate sm:whitespace-normal sm:overflow-visible sm:text-clip"
-        title={value}
-      >
-        {value}
-      </div>
     </div>
   );
 }
