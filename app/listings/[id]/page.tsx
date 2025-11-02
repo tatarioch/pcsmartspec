@@ -1,7 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { createSupabaseBrowser } from '@/lib/supabase/client';
+import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -26,46 +25,24 @@ type Listing = {
   createdAt: string;
 };
 
-export default function ListingDetail({ params }: { params: { id: string } }) {
+export default function ListingDetail({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const [listing, setListing] = useState<Listing | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
-  const supabase = createSupabaseBrowser();
 
   useEffect(() => {
     const fetchListing = async () => {
       try {
-        const { data, error } = await supabase
-          .from('listings')
-          .select('*')
-          .eq('id', params.id)
-          .single();
+        const res = await fetch(`/api/listings/${id}`, { cache: 'no-store' });
+        const result = await res.json();
 
-        if (error) throw error;
-        if (!data) {
+        if (!res.ok || result.status !== 'ok') {
           router.push('/404');
           return;
         }
 
-        setListing({
-          id: data.id,
-          Brand: data.brand,
-          Model: data.model,
-          CPU: data.cpu,
-          RAM_GB: data.ram_gb,
-          RAM_Type: data.ram_type,
-          RAM_Speed_MHz: data.ram_speed_mhz,
-          Storage: data.storage || [],
-          GPU: data.gpu,
-          Display_Resolution: data.display_resolution,
-          Screen_Size_inch: data.screen_size_inch,
-          OS: data.os,
-          price: data.price,
-          description: data.description || '',
-          images: data.images || [],
-          imageUrl: data.images?.[0] || null,
-          createdAt: data.created_at,
-        });
+        setListing(result.data);
       } catch (error) {
         console.error('Error fetching listing:', error);
         router.push('/404');
@@ -75,7 +52,7 @@ export default function ListingDetail({ params }: { params: { id: string } }) {
     };
 
     fetchListing();
-  }, [params.id, router, supabase]);
+  }, [id, router]);
 
   if (loading) {
     return (
