@@ -25,7 +25,14 @@ export async function GET() {
       OS: r.os,
       createdAt: r.created_at,
       status: r.status,
+      price: r.price,
+      description: r.description,
+      // Use the image URLs as they are from the database
       images: r.images || [],
+      // Keep the first image as a separate field for the card view
+      imageUrl: r.images?.[0] || null,
+      // Include all the original data in case we need it
+      ...r
     }));
 
     return new Response(JSON.stringify({ status: 'ok', data: listings }), {

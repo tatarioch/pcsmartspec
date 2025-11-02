@@ -17,7 +17,12 @@ type Listing = {
   Display_Resolution: string;
   Screen_Size_inch: number;
   OS: string;
-  createdAt?: string;
+  price: number;
+  description: string;
+  images: string[];
+  imageUrl: string | null;
+  createdAt: string;
+  status: string;
 };
 
 function prettyStorage(items: StorageItem[]) {
@@ -97,13 +102,45 @@ export default function BuyerPage() {
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((l) => (
-            <div key={l.id} className="rounded-xl border bg-white p-4">
+            <a 
+              key={l.id} 
+              href={`/listings/${l.id}`}
+              className="block rounded-xl border bg-white p-4 hover:shadow-md transition-shadow"
+            >
               <div className="text-xs text-zinc-500">{l.Brand}</div>
               <div className="text-lg font-semibold">{l.Model}</div>
-              <div className="mt-1 text-sm text-zinc-600">{l.CPU}</div>
-              <div className="mt-1 text-sm text-zinc-600">{prettyStorage(l.Storage)}</div>
-              <div className="mt-1 text-sm text-zinc-600">{l.Display_Resolution} · {l.Screen_Size_inch}"</div>
-              <div className="mt-1 text-sm text-zinc-600">{l.OS}</div>
+              {l.imageUrl && (
+                <div className="relative h-48 w-full mb-4 overflow-hidden rounded-lg">
+                  <img
+                    src={l.images?.[0]}
+                    alt={`${l.Brand} ${l.Model}`}
+                    className="h-full w-full object-cover"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = '/placeholder-laptop.jpg'; // Fallback image
+                    }}
+                  />
+                </div>
+              )}
+              <div className="mt-2 text-sm text-zinc-500">
+                <div className="font-medium text-lg text-gray-900 mb-2">
+                  {l.Brand} {l.Model}
+                </div>
+                <div className="text-blue-600 font-semibold text-lg mb-2">
+                  ${l.price?.toLocaleString()}
+                </div>
+                <div className="line-clamp-2 text-gray-700 mb-2">
+                  {l.description}
+                </div>
+                <div className="text-sm">
+                  <div>{l.CPU}</div>
+                  <div>{l.RAM_GB}GB {l.RAM_Type} RAM</div>
+                  <div>{prettyStorage(l.Storage)}</div>
+                  <div>{l.GPU}</div>
+                  <div>{l.Screen_Size_inch}" {l.Display_Resolution}</div>
+                  <div>{l.OS}</div>
+                </div>
+              </div>
               <div className="mt-4 flex items-center gap-2">
                 <button
                   className="rounded-md bg-zinc-900 px-3 py-2 text-sm font-medium text-white"
@@ -118,7 +155,7 @@ export default function BuyerPage() {
                   View Details
                 </button>
               </div>
-            </div>
+            </a>
           ))}
           {!filtered.length && (
             <div className="col-span-full rounded-md border bg-white p-6 text-center text-sm text-zinc-600">
