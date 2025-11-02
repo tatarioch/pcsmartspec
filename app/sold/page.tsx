@@ -65,7 +65,7 @@ export default function SoldPage() {
     <div className="min-h-screen bg-linear-to-br from-slate-50 to-slate-100 text-slate-900 flex flex-col">
       <Navbar />
       
-      <main className="flex-1 w-full max-w-7xl mx-auto px-4 py-8">
+      <main className="bg-zinc-50 text-zinc-900 flex-1 w-full max-w-7xl mx-auto px-4 py-8">
         {/* Header Section */}
         <section className="rounded-2xl border border-slate-200 bg-white/80 backdrop-blur-sm p-6 shadow-sm mb-6">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">

@@ -381,7 +381,7 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-linear-to-br from-slate-50 to-slate-100 text-slate-900 flex flex-col">
       <Navbar />
 
-      <main className="flex-1 w-full max-w-7xl mx-auto px-4 py-8">
+      <main className="bg-zinc-50 text-zinc-900 flex-1 w-full max-w-7xl mx-auto px-4 py-8">
         <section className="rounded-2xl border border-slate-200 bg-white/80 backdrop-blur-sm p-6 shadow-sm mb-6">
           <div className="mb-6 flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-br from-slate-100 to-slate-200">
