@@ -1,6 +1,51 @@
 import { createSupabaseAdmin } from '@/lib/supabase/admin';
 import { NextResponse } from 'next/server';
 
+export async function PUT(
+  request: Request,
+  context: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await context.params;
+    const body = await request.json();
+    const admin = createSupabaseAdmin();
+
+    // Prepare update payload - only include fields that exist in schema
+    const updateData: any = {};
+
+    // Map only valid fields from request body
+    if (body.price !== undefined) updateData.price = body.price;
+    if (body.brand !== undefined) updateData.brand = body.brand;
+    if (body.model !== undefined) updateData.model = body.model;
+    if (body.cpu !== undefined) updateData.cpu = body.cpu;
+    if (body.ram_gb !== undefined) updateData.ram_gb = body.ram_gb;
+    if (body.ram_type !== undefined) updateData.ram_type = body.ram_type;
+    if (body.ram_speed_mhz !== undefined) updateData.ram_speed_mhz = body.ram_speed_mhz;
+    if (body.gpu !== undefined) updateData.gpu = body.gpu;
+    if (body.screen_size_inch !== undefined) updateData.screen_size_inch = body.screen_size_inch;
+    if (body.display_resolution !== undefined) updateData.display_resolution = body.display_resolution;
+    if (body.os !== undefined) updateData.os = body.os;
+    if (body.storage !== undefined) updateData.storage = body.storage;
+    
+    const { data, error } = await admin
+      .from('listings')
+      .update(updateData)
+      .eq('id', id)
+      .select('*')
+      .single();
+
+    if (error) throw error;
+
+    return NextResponse.json({ status: 'ok', data });
+  } catch (error: any) {
+    console.error('Error updating listing:', error);
+    return NextResponse.json(
+      { status: 'error', error: error?.message || 'Failed to update listing' },
+      { status: 500 }
+    );
+  }
+}
+
 export async function GET(
   request: Request,
   context: { params: Promise<{ id: string }> }
