@@ -315,6 +315,7 @@ export default function AttachListing() {
     useState<string>("PCSmartSpec");
   const [title, setTitle] = useState<string>("");
   const [price, setPrice] = useState<number | string>("00000");
+  const [negotiable, setNegotiable] = useState<boolean>(false);
   const [condition, setCondition] = useState<string>("New");
   const [specialFeatures, setSpecialFeatures] = useState<string[]>([]);
   const [specialInput, setSpecialInput] = useState<string>("");
@@ -568,24 +569,40 @@ export default function AttachListing() {
                     className="w-full rounded-md border p-2 text-sm"
                   />
                 </div>
-                <div className="space-y-2">
+
+                <div className="space-y-2 relative">
                   <label className="block text-sm text-zinc-600">
                     Price (ETB)
                   </label>
-                  <input
-                    type="number"
-                    value={price}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      if (val === "") {
-                        setPrice("");
-                      } else {
-                        setPrice(Number(val));
-                      }
-                    }}
-                    className="w-full rounded-md border p-2 text-sm"
-                  />
+
+                  <div className="relative">
+                    <input
+                      type="number"
+                      value={price}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setPrice(val === "" ? "" : Number(val));
+                      }}
+                      className={`w-full rounded-md border p-2 text-sm pr-20 transition-all duration-200 ${
+                        negotiable ? "border-green-400" : "border-zinc-300"
+                      }`}
+                    />
+
+                    {/* Clickable negotiable tag */}
+                    <button
+                      type="button"
+                      onClick={() => setNegotiable(!negotiable)}
+                      className={`absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 px-2 py-1 rounded-full border text-xs font-bold transition-all duration-300 ${
+                        negotiable
+                          ? "bg-green-100 text-green-800 border-green-300 shadow-sm"
+                          : "bg-gray-100 text-gray-500 border-gray-300 hover:bg-gray-200"
+                      }`}
+                    >
+                      <span>{negotiable ? "Negotiable" : "Fixed"}</span>
+                    </button>
+                  </div>
                 </div>
+
                 <div className="space-y-2">
                   <label className="block text-sm text-zinc-600">
                     Condition
