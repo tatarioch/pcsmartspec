@@ -29,6 +29,7 @@ export default function ListingDetail({ params }: { params: Promise<{ id: string
   const { id } = use(params);
   const [listing, setListing] = useState<Listing | null>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const router = useRouter();
 
   useEffect(() => {
@@ -84,13 +85,18 @@ export default function ListingDetail({ params }: { params: Promise<{ id: string
         <div className="md:flex">
           <div className="md:w-1/2 p-4">
             <div className="relative h-96 bg-gray-100 rounded-lg overflow-hidden">
-              {listing.imageUrl ? (
+              {listing.images && listing.images.length > 0 ? (
                 <Image
-                  src={listing.imageUrl}
+                  src={listing.images[selectedImageIndex]}
                   alt={`${listing.Brand} ${listing.Model}`}
                   fill
                   className="object-cover"
                   priority
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src = '/placeholder-laptop.jpg';
+                    target.onerror = null;
+                  }}
                 />
               ) : (
                 <div className="flex items-center justify-center h-full text-gray-400">
@@ -98,10 +104,16 @@ export default function ListingDetail({ params }: { params: Promise<{ id: string
                 </div>
               )}
             </div>
-            {listing.images.length > 1 && (
+            {listing.images && listing.images.length > 1 && (
               <div className="mt-4 grid grid-cols-4 gap-2">
                 {listing.images.map((img, index) => (
-                  <div key={index} className="relative h-20 bg-gray-100 rounded overflow-hidden">
+                  <button
+                    key={index}
+                    onClick={() => setSelectedImageIndex(index)}
+                    className={`relative h-20 bg-gray-100 rounded overflow-hidden border-2 transition-all ${
+                      selectedImageIndex === index ? 'border-blue-500 ring-2 ring-blue-200' : 'border-transparent hover:border-gray-300'
+                    }`}
+                  >
                     <Image
                       src={img}
                       alt={`${listing.Brand} ${listing.Model} - ${index + 1}`}
@@ -109,11 +121,11 @@ export default function ListingDetail({ params }: { params: Promise<{ id: string
                       className="object-cover"
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
-                        target.src = '/placeholder-laptop.jpg'; // Fallback image
-                        target.onerror = null; // Prevent infinite loop if fallback fails
+                        target.src = '/placeholder-laptop.jpg';
+                        target.onerror = null;
                       }}
                     />
-                  </div>
+                  </button>
                 ))}
               </div>
             )}
@@ -133,36 +145,39 @@ export default function ListingDetail({ params }: { params: Promise<{ id: string
               <p className="text-gray-700">{listing.description}</p>
             </div>
             
-            <div className="grid grid-cols-2 gap-4 mb-6">
-              <div>
-                <h3 className="text-sm font-medium text-gray-500">Processor</h3>
-                <p className="text-gray-900">{listing.CPU}</p>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium text-gray-500">RAM</h3>
-                <p className="text-gray-900">{listing.RAM_GB}GB {listing.RAM_Type} ({listing.RAM_Speed_MHz}MHz)</p>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium text-gray-500">Graphics</h3>
-                <p className="text-gray-900">{listing.GPU}</p>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium text-gray-500">Display</h3>
-                <p className="text-gray-900">{listing.Screen_Size_inch}" {listing.Display_Resolution}</p>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium text-gray-500">Storage</h3>
-                <p className="text-gray-900">
-                  {listing.Storage.map((s: any, i: number) => (
-                    <span key={i}>
-                      {s.size}GB {s.type}{i < listing.Storage.length - 1 ? ' + ' : ''}
-                    </span>
-                  ))}
-                </p>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium text-gray-500">OS</h3>
-                <p className="text-gray-900">{listing.OS}</p>
+            <div className="mb-6">
+              <h2 className="text-lg font-semibold mb-4">Specifications</h2>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="rounded-lg border bg-gray-50 p-3">
+                  <div className="text-xs text-gray-500 mb-1">Processor</div>
+                  <div className="text-sm font-medium text-gray-900 break-words">{listing.CPU}</div>
+                </div>
+                <div className="rounded-lg border bg-gray-50 p-3">
+                  <div className="text-xs text-gray-500 mb-1">RAM</div>
+                  <div className="text-sm font-medium text-gray-900">{listing.RAM_GB}GB {listing.RAM_Type} ({listing.RAM_Speed_MHz}MHz)</div>
+                </div>
+                <div className="rounded-lg border bg-gray-50 p-3">
+                  <div className="text-xs text-gray-500 mb-1">Graphics</div>
+                  <div className="text-sm font-medium text-gray-900 break-words">{listing.GPU}</div>
+                </div>
+                <div className="rounded-lg border bg-gray-50 p-3">
+                  <div className="text-xs text-gray-500 mb-1">Display</div>
+                  <div className="text-sm font-medium text-gray-900">{listing.Screen_Size_inch}" {listing.Display_Resolution}</div>
+                </div>
+                <div className="rounded-lg border bg-gray-50 p-3 col-span-2">
+                  <div className="text-xs text-gray-500 mb-1">Storage</div>
+                  <div className="text-sm font-medium text-gray-900">
+                    {listing.Storage.map((s: any, i: number) => (
+                      <span key={i}>
+                        {s.Size_GB || s.size || 0}GB {s.Type || s.type || 'SSD'}{i < listing.Storage.length - 1 ? ' + ' : ''}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div className="rounded-lg border bg-gray-50 p-3 col-span-2">
+                  <div className="text-xs text-gray-500 mb-1">Operating System</div>
+                  <div className="text-sm font-medium text-gray-900">{listing.OS}</div>
+                </div>
               </div>
             </div>
             

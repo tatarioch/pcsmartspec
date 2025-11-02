@@ -56,8 +56,7 @@ export default function BuyerPage() {
       }
     }
     load();
-    const id = setInterval(load, 15000);
-    return () => { cancelled = true; clearInterval(id); };
+    return () => { cancelled = true; };
   }, []);
 
   const filtered = useMemo(() => {
