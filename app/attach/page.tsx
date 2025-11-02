@@ -469,7 +469,7 @@ export default function AttachListing() {
   }
 
   return (
-    <div className="bg-zinc-50 text-zinc-900">
+    <div className=" text-zinc-900">
       <Navbar />
       <div className="mb-6 flex flex-col justify-center items-center m-6 gap-2">
         <h1 className=" text-2xl font-semibold font-mono text-gray-900">
