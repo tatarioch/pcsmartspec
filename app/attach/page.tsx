@@ -928,8 +928,9 @@ export default function AttachListing() {
                   accept="image/*"
                   multiple
                   onChange={onSelectImages}
-                  className="block w-full rounded-md border p-2 text-sm disabled:opacity-50"
+                  className="block w-full cursor-pointer rounded-md border p-2 text-sm disabled:opacity-50"
                   disabled={images.length >= 4}
+                  
                 />
                 <button
                   onClick={onAttach}

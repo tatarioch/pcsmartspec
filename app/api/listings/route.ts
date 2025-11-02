@@ -1,41 +1,99 @@
-import { getAllScans } from '@/lib/scanStore';
+import { createClient } from '@supabase/supabase-js';
+import type { Database } from '@/lib/supabase/database.types';
+
+type Listing = Database['public']['Tables']['listings']['Row'] & {
+  imageUrl?: string;
+  Brand?: string;
+  Model?: string;
+  CPU?: string;
+  RAM_GB?: string;
+  RAM_Type?: string;
+  RAM_Speed_MHz?: string;
+  Storage?: any[];
+  GPU?: string;
+  Display_Resolution?: string;
+  Screen_Size_inch?: number;
+  OS?: string;
+  Scan_Time?: string;
+  status?: string;
+  createdAt?: string;
+};
 
 export async function GET() {
   try {
-    const scans = await getAllScans();
-    const listings = scans
-      .filter((s) => (s as any).status === 'published')
-      .sort((a, b) => Date.parse(b.createdAt || b.Scan_Time || '') - Date.parse(a.createdAt || a.Scan_Time || ''))
-      .map((s) => ({
-        id: s.id,
-        Brand: s.Brand,
-        Model: s.Model,
-        CPU: s.CPU,
-        RAM_GB: s.RAM_GB,
-        RAM_Type: s.RAM_Type,
-        RAM_Speed_MHz: s.RAM_Speed_MHz,
-        Storage: s.Storage,
-        GPU: s.GPU,
-        Display_Resolution: s.Display_Resolution,
-        Screen_Size_inch: s.Screen_Size_inch,
-        OS: s.OS,
-        Scan_Time: s.Scan_Time,
-        createdAt: s.createdAt,
-        status: s.status,
-      }));
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      throw new Error('Missing Supabase environment variables');
+    }
 
-    return new Response(JSON.stringify({ status: 'ok', data: listings }), {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0',
-        'Surrogate-Control': 'no-store'
+    const supabase = createClient<Database>(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    );
+    
+    // Fetch listings with status 'published' and order by creation date
+    const { data: listings, error } = await supabase
+      .from('listings')
+      .select('*')
+      .eq('status', 'published')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    // Transform data to match the frontend's expected format
+    const formattedListings = (listings || []).map((listing: Database['public']['Tables']['listings']['Row']) => ({
+      id: listing.id,
+      Brand: listing.brand || '',
+      Model: listing.model || '',
+      CPU: listing.cpu || '',
+      RAM_GB: listing.ram_gb || '',
+      RAM_Type: listing.ram_type || '',
+      RAM_Speed_MHz: listing.ram_speed_mhz || '',
+      Storage: listing.storage || [],
+      GPU: listing.gpu || '',
+      Display_Resolution: listing.display_resolution || '',
+      Screen_Size_inch: listing.screen_size_inch || 0,
+      OS: listing.os || '',
+      createdAt: listing.created_at,
+      status: listing.status,
+      price: listing.price,
+      description: listing.description,
+      // Add image URL if available
+      ...(listing.images && listing.images.length > 0 && {
+        imageUrl: `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/listings/${listing.images[0]}`
+      })
+    }));
+
+    return new Response(
+      JSON.stringify({ 
+        status: 'ok', 
+        data: formattedListings 
+      }), 
+      {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+          'Surrogate-Control': 'no-store'
+        }
       }
-    });
+    );
   } catch (error) {
-    return new Response(JSON.stringify({ status: 'error', error: 'Failed to load listings' }), { status: 500 });
+    console.error('Error fetching listings:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return new Response(
+      JSON.stringify({ 
+        status: 'error', 
+        error: 'Failed to load listings',
+        details: errorMessage 
+      }), 
+      { 
+        status: 500,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }
+    );
   }
 }
