@@ -3,6 +3,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
+import { createSupabaseBrowser } from "@/lib/supabase/client";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -18,14 +19,41 @@ export default function LoginPage() {
     setError(null);
     setLoading(true);
     try {
-      if (!email || !password)
+      const emailTrim = email.trim();
+      const passwordTrim = password.trim();
+
+      if (!emailTrim || !passwordTrim) {
         throw new Error("Email and password are required");
-      const token = "demo-token";
-      if (remember) localStorage.setItem("rsc_token", token);
-      else sessionStorage.setItem("rsc_token", token);
+      }
+
+      const isSixDigit = /^\d{6}$/.test(passwordTrim);
+      if (!isSixDigit) {
+        throw new Error("Password must be a 6-digit code");
+      }
+
+      const supabase = createSupabaseBrowser();
+      const { data: user, error: dbError } = await supabase
+        .from("users")
+        .select("id,email,password")
+        .eq("email", emailTrim)
+        .single();
+
+      if (dbError || !user) {
+        throw new Error("Invalid email or password");
+      }
+
+      if (user.password !== passwordTrim) {
+        throw new Error("Invalid email or password");
+      }
+
+      const store = remember ? localStorage : sessionStorage;
+      store.setItem("rsc_user_id", String(user.id));
+      store.setItem("rsc_email", String(user.email));
+      store.setItem("rsc_authed", "1");
+
       router.push("/dashboard");
     } catch (err: any) {
-      setError(err.message ?? "Login failed");
+      setError(err?.message || "Login failed");
     } finally {
       setLoading(false);
     }
@@ -34,7 +62,6 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-slate-50 to-slate-100 px-4">
       <div className="w-full max-w-md">
-        {/* Header */}
         <div className="text-center mb-10">
           <h1 className="text-3xl font-light text-slate-800 tracking-tight">
             Royal Smart Computer
@@ -43,8 +70,6 @@ export default function LoginPage() {
             Sign in to your account
           </p>
         </div>
-
-        {/* Form Card */}
         <div className="rounded-2xl bg-white/80 backdrop-blur-sm p-8 shadow-sm border border-slate-200/60">
           <form onSubmit={onSubmit} className="space-y-6">
             <div>
@@ -78,8 +103,12 @@ export default function LoginPage() {
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
+                  placeholder="Enter your 6-digit password"
                   required
+                  inputMode="numeric"
+                  pattern="\d{6}"
+                  maxLength={6}
+                  autoComplete="one-time-code"
                   className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 pr-11 text-slate-700 placeholder-slate-400 focus:border-slate-400 focus:ring-1 focus:ring-slate-300 outline-none transition-all duration-200"
                 />
                 <button
@@ -110,7 +139,6 @@ export default function LoginPage() {
                 Forgot password?
               </Link>
             </div>
-
             {error && (
               <div className="rounded-xl border border-red-200 bg-red-50/80 px-4 py-3 text-sm text-red-700 backdrop-blur-sm">
                 {error}
