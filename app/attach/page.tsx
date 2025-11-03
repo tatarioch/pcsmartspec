@@ -1030,9 +1030,6 @@ export default function AttachListing() {
         </div>
 
         <div className="mt-8 flex items-center justify-end gap-3">
-          <button className="rounded-md border px-4 py-2 text-sm font-medium">
-            Save Draft
-          </button>
           <button
             className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
             disabled={publishing || !scannerData?.id}

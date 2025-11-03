@@ -35,7 +35,11 @@ export default function DashboardPage() {
   const [uploadOpen, setUploadOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
-  const [filter, setFilter] = useState<'all' | 'published' | 'draft' | 'sold'>('all');
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [listingToDelete, setListingToDelete] = useState<Listing | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [filter, setFilter] = useState<'all' | 'published'>('all');
+  const [searchQuery, setSearchQuery] = useState<string>('');
 
   useEffect(() => {
     loadListings();
@@ -82,15 +86,51 @@ export default function DashboardPage() {
   };
 
   const filteredListings = listings.filter(listing => {
-    if (filter === 'all') return true;
-    return listing.status === filter;
+    // Apply status filter
+    const statusMatch = filter === 'all' || listing.status === filter;
+    
+    // Apply search filter if query exists
+    if (!searchQuery.trim()) {
+      return statusMatch;
+    }
+    
+    const query = searchQuery.toLowerCase().trim();
+    const queryWords = query.split(/\s+/).filter(word => word.length > 0);
+    
+    // Build a comprehensive search text from all relevant fields
+    const searchableText = [
+      listing.brand || '',
+      listing.model || '',
+      listing.cpu || '',
+      listing.ram_gb?.toString() || '',
+      listing.ram_type || '',
+      listing.gpu || '',
+      listing.display_resolution || '',
+      listing.screen_size_inch?.toString() || '',
+      listing.os || '',
+      listing.description || '',
+      listing.price?.toString() || '',
+      listing.status || '',
+      // Combine fields for better matching
+      `${listing.brand || ''} ${listing.model || ''}`,
+      `${listing.ram_gb || ''} ${listing.ram_type || ''}`,
+      `${listing.screen_size_inch || ''} ${listing.display_resolution || ''}`,
+    ]
+      .map(field => field.toLowerCase())
+      .join(' ')
+      .trim();
+    
+    // Check if all query words appear in the searchable text (supports multi-word search)
+    const matches = queryWords.length > 0 
+      ? queryWords.every(word => searchableText.includes(word))
+      : searchableText.includes(query);
+    
+    return statusMatch && matches;
   });
 
   const stats = {
     total: listings.length,
     published: listings.filter(l => l.status === 'published').length,
-    draft: listings.filter(l => l.status === 'draft').length,
-    sold: listings.filter(l => l.status === 'sold').length,
   };
 
   const handleAddFromModal = async (data: NewComputerData): Promise<boolean> => {
@@ -181,6 +221,44 @@ export default function DashboardPage() {
     setEditOpen(true);
   };
 
+  const handleDeleteClick = (listing: Listing) => {
+    setListingToDelete(listing);
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!listingToDelete) return;
+
+    try {
+      setDeleting(true);
+      const res = await fetch(`/api/listings/${listingToDelete.id}`, {
+        method: 'DELETE',
+      });
+
+      const result = await res.json();
+
+      if (!res.ok || result.status !== 'ok') {
+        alert(`❌ Delete failed: ${result.error || 'Unknown error'}`);
+        return;
+      }
+
+      // Reload listings after successful delete
+      loadListings();
+      setDeleteConfirmOpen(false);
+      setListingToDelete(null);
+    } catch (err: any) {
+      console.error('Error deleting listing:', err);
+      alert(`❌ Error: ${err?.message || 'Unknown error'}`);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteConfirmOpen(false);
+    setListingToDelete(null);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 text-slate-900 flex flex-col">
       <Navbar />
@@ -203,31 +281,47 @@ export default function DashboardPage() {
               Add Listing
             </button>
           </div>
+        </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-              <div className="text-sm font-medium text-gray-600">Total Listings</div>
-              <div className="text-2xl font-bold text-gray-900 mt-1">{stats.total}</div>
+        {/* Search Bar */}
+        <div className="mb-6">
+          <div className="relative max-w-md">
+            <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+              <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
             </div>
-            <div className="bg-green-50 border border-green-200 rounded-xl p-4 shadow-sm">
-              <div className="text-sm font-medium text-green-700">Published</div>
-              <div className="text-2xl font-bold text-green-900 mt-1">{stats.published}</div>
-            </div>
-            <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 shadow-sm">
-              <div className="text-sm font-medium text-yellow-700">Draft</div>
-              <div className="text-2xl font-bold text-yellow-900 mt-1">{stats.draft}</div>
-            </div>
-            <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 shadow-sm">
-              <div className="text-sm font-medium text-gray-700">Sold</div>
-              <div className="text-2xl font-bold text-gray-900 mt-1">{stats.sold}</div>
-            </div>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search listings... (brand, model, CPU, RAM, GPU, price, etc.)"
+              className="w-full pl-10 pr-4 py-3 text-sm border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
           </div>
+          {searchQuery && (
+            <p className="mt-2 text-sm text-gray-600">
+              {filteredListings.length === 0 
+                ? 'No listings found matching your search.'
+                : `Found ${filteredListings.length} listing${filteredListings.length === 1 ? '' : 's'} matching "${searchQuery}"`
+              }
+            </p>
+          )}
         </div>
 
         {/* Filters */}
         <div className="mb-6 flex gap-2 overflow-x-auto pb-2">
-          {(['all', 'published', 'draft', 'sold'] as const).map((status) => (
+          {(['all', 'published'] as const).map((status) => (
             <button
               key={status}
               onClick={() => setFilter(status)}
@@ -292,9 +386,6 @@ export default function DashboardPage() {
                       <h3 className="font-semibold text-gray-900 truncate">
                         {listing.brand} {listing.model}
                       </h3>
-                      <p className="text-sm text-gray-600 mt-1 line-clamp-1">
-                        {listing.description || 'No description'}
-                      </p>
                     </div>
                     {listing.price && (
                       <div className="text-xl font-bold text-blue-600 ml-2">
@@ -321,14 +412,11 @@ export default function DashboardPage() {
                       className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                         listing.status === 'published'
                           ? 'bg-green-100 text-green-800'
-                          : listing.status === 'draft'
-                          ? 'bg-yellow-100 text-yellow-800'
                           : 'bg-gray-100 text-gray-800'
                       }`}
                     >
                       {listing.status === 'published' && '✓ Published'}
-                      {listing.status === 'draft' && '📝 Draft'}
-                      {listing.status === 'sold' && '✓ Sold'}
+                      {listing.status !== 'published' && '—'}
                     </span>
                     <div className="flex items-center gap-2">
                       <button
@@ -339,6 +427,15 @@ export default function DashboardPage() {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                         </svg>
                         Edit
+                      </button>
+                      <button
+                        onClick={() => handleDeleteClick(listing)}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-red-700 bg-white border border-red-300 rounded-lg hover:bg-red-50 transition-colors"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                        Delete
                       </button>
                       <Link
                         href={`/listings/${listing.id}`}
@@ -398,6 +495,70 @@ export default function DashboardPage() {
         listing={selectedListing}
         onUpdate={handleUpdateListing}
       />
+
+      {/* Delete Confirmation Popup */}
+      {deleteConfirmOpen && listingToDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="flex-shrink-0 w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-gray-900">Delete Listing</h3>
+                <p className="text-sm text-gray-600 mt-1">
+                  Are you sure you want to delete this listing? This action cannot be undone.
+                </p>
+              </div>
+            </div>
+            
+            <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+              <p className="text-sm font-medium text-gray-900">
+                {listingToDelete.brand} {listingToDelete.model}
+              </p>
+              {listingToDelete.price && (
+                <p className="text-sm text-gray-600 mt-1">
+                  ${listingToDelete.price.toLocaleString()}
+                </p>
+              )}
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                onClick={handleDeleteCancel}
+                disabled={deleting}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteConfirm}
+                disabled={deleting}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {deleting ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    Delete
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

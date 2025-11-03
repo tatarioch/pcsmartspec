@@ -98,3 +98,28 @@ export async function GET(
     );
   }
 }
+
+export async function DELETE(
+  request: Request,
+  context: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await context.params;
+    const admin = createSupabaseAdmin();
+    
+    const { error } = await admin
+      .from('listings')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+
+    return NextResponse.json({ status: 'ok', message: 'Listing deleted successfully' });
+  } catch (error: any) {
+    console.error('Error deleting listing:', error);
+    return NextResponse.json(
+      { status: 'error', error: error?.message || 'Failed to delete listing' },
+      { status: 500 }
+    );
+  }
+}
