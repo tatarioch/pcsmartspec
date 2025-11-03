@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { updateScan, getScan } from '@/lib/scanStore';
 import { createSupabaseAdmin } from '@/lib/supabase/admin';
+import { sendListingToTelegram } from '@/lib/telegram';
 
 const BUCKET = process.env.NEXT_PUBLIC_SUPABASE_LISTING_BUCKET || 'listing-images';
 
@@ -108,6 +109,33 @@ export async function POST(req: Request) {
         publishedAt: payload.published_at,
       } as any);
 
+      // Send to Telegram channel (non-blocking)
+      sendListingToTelegram({
+        title: payload.title,
+        price: payload.price,
+        brand: payload.brand,
+        model: payload.model,
+        cpu: payload.cpu,
+        ram_gb: payload.ram_gb,
+        ram_type: payload.ram_type,
+        ram_speed_mhz: payload.ram_speed_mhz,
+        storage: payload.storage,
+        gpu: payload.gpu,
+        display_resolution: payload.display_resolution,
+        screen_size_inch: payload.screen_size_inch,
+        os: payload.os,
+        condition: payload.condition,
+        negotiable: payload.negotiable,
+        battery: payload.battery,
+        special_features: payload.special_features,
+        guarantee_months: payload.guarantee_months,
+        guarantee_provider: payload.guarantee_provider,
+        images: imageUrls,
+      }).catch((err) => {
+        console.error('Failed to send to Telegram:', err);
+        // Don't fail the publish if Telegram fails
+      });
+
       return NextResponse.json({ status: 'ok', data: inserted });
     }
 
@@ -194,6 +222,33 @@ export async function POST(req: Request) {
     if (error) {
       return NextResponse.json({ status: 'error', error: error.message }, { status: 500 });
     }
+
+    // Send to Telegram channel (non-blocking)
+    sendListingToTelegram({
+      title: payload.title,
+      price: payload.price,
+      brand: payload.brand,
+      model: payload.model,
+      cpu: payload.cpu,
+      ram_gb: payload.ram_gb,
+      ram_type: payload.ram_type,
+      ram_speed_mhz: payload.ram_speed_mhz,
+      storage: payload.storage,
+      gpu: payload.gpu,
+      display_resolution: payload.display_resolution,
+      screen_size_inch: payload.screen_size_inch,
+      os: payload.os,
+      condition: payload.condition,
+      negotiable: payload.negotiable,
+      battery: payload.battery,
+      special_features: payload.special_features,
+      guarantee_months: payload.guarantee_months || null,
+      guarantee_provider: payload.guarantee_provider || null,
+      images: imageUrls,
+    }).catch((err) => {
+      console.error('Failed to send to Telegram:', err);
+      // Don't fail the publish if Telegram fails
+    });
 
     return NextResponse.json({ status: 'ok', data: inserted });
   } catch (e: any) {
