@@ -589,8 +589,8 @@ export default function AttachListing() {
                       type="button"
                       onClick={() => setNegotiable(!negotiable)}
                       className={`absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 px-2 py-1 rounded-full border text-xs font-bold transition-all duration-300 ${negotiable
-                          ? "bg-green-100 text-green-800 border-green-300 shadow-sm"
-                          : "bg-gray-100 text-gray-500 border-gray-300 hover:bg-gray-200"
+                        ? "bg-green-100 text-green-800 border-green-300 shadow-sm"
+                        : "bg-gray-100 text-gray-500 border-gray-300 hover:bg-gray-200"
                         }`}
                     >
                       <span>{negotiable ? "Negotiable" : "Fixed"}</span>
@@ -1066,6 +1066,38 @@ export default function AttachListing() {
                 setPublishMessage(
                   "✅ Listing published. It will now appear on the buyer page."
                 );
+
+                // Reset page to waiting mode after successful publish
+                setScannerData(null);
+                setWaitingForScan(true);
+                setFormData({
+                  brand: "",
+                  model: "",
+                  cpu: "",
+                  ram: "",
+                  gpu: "",
+                  storage: "",
+                  display: "",
+                  condition: "New",
+                  price: "",
+                  description: "",
+                });
+                setTitle("");
+                setImages([]);
+                setAttached(false);
+                setAttachedCount(0);
+                setSpecialFeatures([]);
+                setSpecialInput("");
+                setBatteryRange("4-5");
+                setBatteryOther("");
+                setCondition("New");
+                setPrice("00000");
+                setNegotiable(false);
+
+                // Trigger refresh to check for new scan data
+                setTimeout(() => {
+                  setRefreshTick((t) => t + 1);
+                }, 1000);
               } catch (e: any) {
                 setPublishMessage(
                   `❌ ${e?.message || "Failed to publish listing"}`

@@ -68,7 +68,12 @@ async function writeStore(store: Record<string, ScanData>) {
 
 export const getScan = async (id: string): Promise<ScanData | undefined> => {
   const store = await readStore();
-  return store[id];
+  const scan = store[id];
+  // Don't return published scans - they shouldn't be shown on attach page
+  if (scan && scan.status === 'published') {
+    return undefined;
+  }
+  return scan;
 };
 
 export const setScan = async (id: string, data: Omit<ScanData, 'id'>): Promise<void> => {
@@ -87,7 +92,8 @@ export const deleteScan = async (id: string): Promise<void> => {
 
 export const getLatestScan = async (): Promise<ScanData | undefined> => {
   const store = await readStore();
-  const entries = Object.values(store);
+  // Filter out published scans - only return pending or non-published scans
+  const entries = Object.values(store).filter(scan => scan.status !== 'published');
   if (!entries.length) return undefined;
   // Pick the most recent by createdAt (fallback to Scan_Time if needed)
   return entries.sort((a, b) => {

@@ -1,5 +1,35 @@
 {
-  "scan_1762168904035": {
+  "scan_1762169790735": {
+    "Brand": "HP",
+    "Model": "Victus by HP Gaming Laptop 15-fa1xxx",
+    "CPU": "13th Gen Intel(R) Core(TM) i5-13420H",
+    "Cores": "8",
+    "Threads": "12",
+    "BaseSpeed_MHz": "2100",
+    "RAM_GB": "16",
+    "RAM_Speed_MHz": "3200",
+    "RAM_Type": "DDR4",
+    "Storage": [
+      {
+        "Model": "PSENN512GA87FC0",
+        "Size_GB": 512.11,
+        "Type": "SSD",
+        "BusType": "NVMe"
+      }
+    ],
+    "GPU": "Intel(R) UHD Graphics, NVIDIA GeForce RTX 2050",
+    "Display_Resolution": "1920x1080",
+    "Screen_Size_inch": 15.6,
+    "OS": "Microsoft Windows 11 Home",
+    "Scan_Time": "2025-11-03T11:36:30.735Z",
+    "createdAt": "2025-11-03T11:36:30.735Z",
+    "status": "published",
+    "id": "scan_1762169790735",
+    "title": "HP Victus by HP Gaming Laptop 15-fa1xxx",
+    "price": "2",
+    "publishedAt": "2025-11-03T11:36:59.772Z"
+  },
+  "scan_1762169920801": {
     "Brand": "HP",
     "Model": "Victus by HP Gaming Laptop 15-fa1xxx",
     "CPU": "13th Gen Intel(R) Core(TM) i5-13420H",
@@ -25,36 +55,12 @@
     "Display_Resolution": "1920x1080",
     "Screen_Size_inch": 15.6,
     "OS": "Microsoft Windows 11 Home",
-    "Scan_Time": "2025-11-03T11:21:44.035Z",
-    "createdAt": "2025-11-03T11:21:44.035Z",
-    "status": "pending",
-    "id": "scan_1762168904035"
-  },
-  "scan_1762169004297": {
-    "Brand": "HP",
-    "Model": "Victus by HP Gaming Laptop 15-fa1xxx",
-    "CPU": "13th Gen Intel(R) Core(TM) i5-13420H",
-    "Cores": "8",
-    "Threads": "12",
-    "BaseSpeed_MHz": "2100",
-    "RAM_GB": "16",
-    "RAM_Speed_MHz": "3200",
-    "RAM_Type": "DDR4",
-    "Storage": [
-      {
-        "Model": "PSENN512GA87FC0",
-        "Size_GB": 512.11,
-        "Type": "SSD",
-        "BusType": "NVMe"
-      }
-    ],
-    "GPU": "Intel(R) UHD Graphics, NVIDIA GeForce RTX 2050",
-    "Display_Resolution": "1920x1080",
-    "Screen_Size_inch": 15.6,
-    "OS": "Microsoft Windows 11 Home",
-    "Scan_Time": "2025-11-03T11:23:24.297Z",
-    "createdAt": "2025-11-03T11:23:24.297Z",
-    "status": "pending",
-    "id": "scan_1762169004297"
+    "Scan_Time": "2025-11-03T11:38:40.801Z",
+    "createdAt": "2025-11-03T11:38:40.801Z",
+    "status": "published",
+    "id": "scan_1762169920801",
+    "title": "HP Victus by HP Gaming Laptop 15-fa1xxx",
+    "price": "1",
+    "publishedAt": "2025-11-03T11:39:19.750Z"
   }
 }
