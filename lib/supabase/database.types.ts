@@ -74,6 +74,56 @@ export interface Database {
           description?: string | null
         }
       }
+      receipts: {
+        Row: {
+          id: string
+          listing_id: string | null
+          receipt_number: string
+          buyer_name: string
+          buyer_phone: string
+          buyer_address: string | null
+          sale_date: string
+          purchase_price: number
+          seller_signature: string | null
+          pc_specs_snapshot: Json
+          notes: string | null
+          deleted_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          listing_id?: string | null
+          receipt_number: string
+          buyer_name: string
+          buyer_phone: string
+          buyer_address?: string | null
+          sale_date?: string
+          purchase_price: number
+          seller_signature?: string | null
+          pc_specs_snapshot: Json
+          notes?: string | null
+          deleted_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          listing_id?: string | null
+          receipt_number?: string
+          buyer_name?: string
+          buyer_phone?: string
+          buyer_address?: string | null
+          sale_date?: string
+          purchase_price?: number
+          seller_signature?: string | null
+          pc_specs_snapshot?: Json
+          notes?: string | null
+          deleted_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never
