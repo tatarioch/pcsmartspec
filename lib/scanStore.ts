@@ -52,24 +52,27 @@ function dbRowToScanData(row: any): ScanData {
 
 // Convert ScanData to database insert format
 function scanDataToDbRow(data: Omit<ScanData, 'id'> | Partial<ScanData>, id?: string): any {
+  const d = data as any; // Use type assertion to access properties
   return {
-    id: id || (data as any).id,
-    brand: (data as any).Brand || data.brand,
-    model: (data as any).Model || data.model,
-    cpu: (data as any).CPU || data.cpu,
-    cores: (data as any).Cores || data.cores,
-    threads: (data as any).Threads || data.threads,
-    base_speed_mhz: (data as any).BaseSpeed_MHz || data.base_speed_mhz,
-    ram_gb: (data as any).RAM_GB || data.ram_gb,
-    ram_speed_mhz: (data as any).RAM_Speed_MHz || data.ram_speed_mhz,
-    ram_type: (data as any).RAM_Type || data.ram_type,
-    storage: (data as any).Storage || data.storage,
-    gpu: (data as any).GPU || data.gpu,
-    display_resolution: (data as any).Display_Resolution || data.display_resolution,
-    screen_size_inch: (data as any).Screen_Size_inch || data.screen_size_inch,
-    os: (data as any).OS || data.os,
-    scan_time: (data as any).Scan_Time || data.scan_time,
-    status: (data as any).status || data.status || 'pending',
+    id: id || d.id,
+    brand: d.Brand || null,
+    model: d.Model || null,
+    cpu: d.CPU || null,
+    cores: d.Cores || null,
+    threads: d.Threads || null,
+    base_speed_mhz: d.BaseSpeed_MHz || null,
+    ram_gb: d.RAM_GB || null,
+    ram_speed_mhz: d.RAM_Speed_MHz || null,
+    ram_type: d.RAM_Type || null,
+    storage: d.Storage || null,
+    gpu: d.GPU || null,
+    display_resolution: d.Display_Resolution || null,
+    screen_size_inch: d.Screen_Size_inch || null,
+    os: d.OS || null,
+    scan_time: d.Scan_Time || d.createdAt || null,
+    status: d.status || 'pending',
+    created_at: d.createdAt || new Date().toISOString(),
+    updated_at: d.updatedAt || null,
   };
 }
 
