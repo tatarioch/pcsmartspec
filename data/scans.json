@@ -1,32 +1,60 @@
 {
-  "scan_1762086210633": {
+  "scan_1762168904035": {
     "Brand": "HP",
-    "Model": "HP EliteBook 840 G5",
-    "CPU": "Intel(R) Core(TM) i7-8650U CPU @ 1.90GHz",
-    "Cores": "4",
-    "Threads": "8",
-    "BaseSpeed_MHz": "2112",
+    "Model": "Victus by HP Gaming Laptop 15-fa1xxx",
+    "CPU": "13th Gen Intel(R) Core(TM) i5-13420H",
+    "Cores": "8",
+    "Threads": "12",
+    "BaseSpeed_MHz": "2100",
     "RAM_GB": "16",
-    "RAM_Speed_MHz": "2400",
+    "RAM_Speed_MHz": "3200",
     "RAM_Type": "DDR4",
     "Storage": [
       {
-        "Model": "M.2 512G",
+        "Model": "PSENN512GA87FC0",
         "Size_GB": 512.11,
-        "Type": "SSD",
-        "BusType": "SATA"
+        "Type": "SSD"
+      },
+      {
+        "Model": "USB DISK 2.0",
+        "Size_GB": 31.04,
+        "Type": "Unspecified"
       }
     ],
-    "GPU": "Intel(R) UHD Graphics 620",
+    "GPU": "Intel(R) UHD Graphics, NVIDIA GeForce RTX 2050",
     "Display_Resolution": "1920x1080",
-    "Screen_Size_inch": 14,
-    "OS": "Microsoft Windows 11 Pro",
-    "Scan_Time": "2025-11-02T12:23:30.633Z",
-    "createdAt": "2025-11-02T12:23:30.633Z",
-    "status": "published",
-    "id": "scan_1762086210633",
-    "title": "HP HP EliteBook 840 G5",
-    "price": "100998",
-    "publishedAt": "2025-11-02T21:56:32.422Z"
+    "Screen_Size_inch": 15.6,
+    "OS": "Microsoft Windows 11 Home",
+    "Scan_Time": "2025-11-03T11:21:44.035Z",
+    "createdAt": "2025-11-03T11:21:44.035Z",
+    "status": "pending",
+    "id": "scan_1762168904035"
+  },
+  "scan_1762169004297": {
+    "Brand": "HP",
+    "Model": "Victus by HP Gaming Laptop 15-fa1xxx",
+    "CPU": "13th Gen Intel(R) Core(TM) i5-13420H",
+    "Cores": "8",
+    "Threads": "12",
+    "BaseSpeed_MHz": "2100",
+    "RAM_GB": "16",
+    "RAM_Speed_MHz": "3200",
+    "RAM_Type": "DDR4",
+    "Storage": [
+      {
+        "Model": "PSENN512GA87FC0",
+        "Size_GB": 512.11,
+        "Type": "SSD",
+        "BusType": "NVMe"
+      }
+    ],
+    "GPU": "Intel(R) UHD Graphics, NVIDIA GeForce RTX 2050",
+    "Display_Resolution": "1920x1080",
+    "Screen_Size_inch": 15.6,
+    "OS": "Microsoft Windows 11 Home",
+    "Scan_Time": "2025-11-03T11:23:24.297Z",
+    "createdAt": "2025-11-03T11:23:24.297Z",
+    "status": "pending",
+    "id": "scan_1762169004297"
   }
 }

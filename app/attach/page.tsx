@@ -8,6 +8,8 @@ import {
 } from "next/navigation";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import { Camera } from "lucide-react";
+import CameraCapture from "../com/CameraCapture";
 
 interface StorageItem {
   Model: string;
@@ -151,16 +153,14 @@ export default function AttachListing() {
             model: scanData.Model || "",
             cpu: scanData.CPU || "",
             ram: scanData.RAM_GB
-              ? `${scanData.RAM_GB}GB ${scanData.RAM_Type || ""} ${
-                  scanData.RAM_Speed_MHz || ""
-                }MHz`
+              ? `${scanData.RAM_GB}GB ${scanData.RAM_Type || ""} ${scanData.RAM_Speed_MHz || ""
+              }MHz`
               : "",
             gpu: scanData.GPU || "",
             storage: storageInfo,
             display: scanData.Display_Resolution
-              ? `${scanData.Display_Resolution} (${
-                  scanData.Screen_Size_inch || ""
-                }")`
+              ? `${scanData.Display_Resolution} (${scanData.Screen_Size_inch || ""
+              }")`
               : "",
             cores: scanData.Cores || "",
             threads: scanData.Threads || "",
@@ -216,16 +216,14 @@ export default function AttachListing() {
               model: scanData.Model || "",
               cpu: scanData.CPU || "",
               ram: scanData.RAM_GB
-                ? `${scanData.RAM_GB}GB ${scanData.RAM_Type || ""} ${
-                    scanData.RAM_Speed_MHz || ""
-                  }MHz`
+                ? `${scanData.RAM_GB}GB ${scanData.RAM_Type || ""} ${scanData.RAM_Speed_MHz || ""
+                }MHz`
                 : "",
               gpu: scanData.GPU || "",
               storage: storageInfo,
               display: scanData.Display_Resolution
-                ? `${scanData.Display_Resolution} (${
-                    scanData.Screen_Size_inch || ""
-                  }")`
+                ? `${scanData.Display_Resolution} (${scanData.Screen_Size_inch || ""
+                }")`
                 : "",
               cores: scanData.Cores || "",
               threads: scanData.Threads || "",
@@ -364,8 +362,7 @@ export default function AttachListing() {
   const ramSummary = useMemo(
     () =>
       scannerData?.RAM_GB
-        ? `${scannerData.RAM_GB}GB ${scannerData.RAM_Type || ""} ${
-            scannerData.RAM_Speed_MHz || ""
+        ? `${scannerData.RAM_GB}GB ${scannerData.RAM_Type || ""} ${scannerData.RAM_Speed_MHz || ""
           }MHz`.trim()
         : "N/A",
     [scannerData]
@@ -539,8 +536,8 @@ export default function AttachListing() {
               {totalStorageGB
                 ? `${totalStorageGB.toFixed(0)} GB`
                 : waitingForScan
-                ? "Waiting…"
-                : "N/A"}
+                  ? "Waiting…"
+                  : "N/A"}
               {storageKinds ? ` · ${storageKinds}` : ""}
             </div>
           </div>
@@ -550,8 +547,8 @@ export default function AttachListing() {
               {scannerData?.Scan_Time
                 ? formatScanTime(scannerData.Scan_Time)
                 : waitingForScan
-                ? "Waiting…"
-                : "N/A"}
+                  ? "Waiting…"
+                  : "N/A"}
             </div>
           </div>
         </section>
@@ -583,20 +580,18 @@ export default function AttachListing() {
                         const val = e.target.value;
                         setPrice(val === "" ? "" : Number(val));
                       }}
-                      className={`w-full rounded-md border p-2 text-sm pr-20 transition-all duration-200 ${
-                        negotiable ? "border-green-400" : "border-zinc-300"
-                      }`}
+                      className={`w-full rounded-md border p-2 text-sm pr-20 transition-all duration-200 ${negotiable ? "border-green-400" : "border-zinc-300"
+                        }`}
                     />
 
                     {/* Clickable negotiable tag */}
                     <button
                       type="button"
                       onClick={() => setNegotiable(!negotiable)}
-                      className={`absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 px-2 py-1 rounded-full border text-xs font-bold transition-all duration-300 ${
-                        negotiable
+                      className={`absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 px-2 py-1 rounded-full border text-xs font-bold transition-all duration-300 ${negotiable
                           ? "bg-green-100 text-green-800 border-green-300 shadow-sm"
                           : "bg-gray-100 text-gray-500 border-gray-300 hover:bg-gray-200"
-                      }`}
+                        }`}
                     >
                       <span>{negotiable ? "Negotiable" : "Fixed"}</span>
                     </button>
@@ -863,15 +858,13 @@ export default function AttachListing() {
                       />
                       <SpecItem
                         label="Cores / Threads"
-                        value={`${formData.cores || scannerData.Cores} / ${
-                          formData.threads || scannerData.Threads
-                        }`}
+                        value={`${formData.cores || scannerData.Cores} / ${formData.threads || scannerData.Threads
+                          }`}
                       />
                       <SpecItem
                         label="Base Speed"
-                        value={`${
-                          formData.baseSpeedMHz || scannerData.BaseSpeed_MHz
-                        } MHz`}
+                        value={`${formData.baseSpeedMHz || scannerData.BaseSpeed_MHz
+                          } MHz`}
                       />
                       <SpecItem
                         label="RAM"
@@ -922,39 +915,56 @@ export default function AttachListing() {
 
             <div className="rounded-xl border bg-white p-5">
               <h2 className="mb-4 text-base font-semibold">Photos</h2>
-              <div className="flex items-center justify-between gap-4">
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={onSelectImages}
-                  className="block w-full cursor-pointer rounded-md border p-2 text-sm disabled:opacity-50"
-                  disabled={images.length >= 4}
-                  
-                />
+
+              <CameraCapture
+                onCapture={(imageDataUrl) => {
+                  if (images.length < 4) {
+                    setImages((prev) => [...prev, imageDataUrl]);
+                  }
+                }}
+                maxImages={4}
+                currentImageCount={images.length}
+              />
+
+              <div className="mb-4 flex items-center gap-4">
+                <label className="flex-1 cursor-pointer">
+                  <div className="flex items-center justify-center rounded-md border border-dashed border-zinc-300 bg-zinc-50 px-4 py-3 text-sm font-medium text-zinc-700 hover:bg-zinc-100 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <Camera className="mr-2 h-4 w-4" />
+                    Upload from Device
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={onSelectImages}
+                    className="hidden"
+                    disabled={images.length >= 4}
+                  />
+                </label>
                 <button
                   onClick={onAttach}
-                  className={`rounded-md px-3 py-2 text-sm font-medium text-white disabled:opacity-50 ${
-                    attached ? "bg-emerald-600" : "bg-zinc-900"
-                  }`}
+                  className={`rounded-md px-3 py-2 text-sm font-medium text-white disabled:opacity-50 ${attached ? "bg-emerald-600" : "bg-zinc-900"
+                    }`}
                   disabled={!images.length}
                 >
                   {attached
-                    ? `Attached ${attachedCount} photo${
-                        attachedCount === 1 ? "" : "s"
-                      }`
+                    ? `Attached ${attachedCount} photo${attachedCount === 1 ? "" : "s"
+                    }`
                     : "Attach to Listing"}
                 </button>
               </div>
-              <div className="mt-2 text-xs text-zinc-500">
+
+              <div className="mb-3 text-xs text-zinc-500">
                 {images.length}/4 selected
               </div>
+
               {attached && (
-                <div className="mt-3 rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+                <div className="mb-4 rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
                   Photos attached to the draft listing. You can still remove or
                   add before publishing.
                 </div>
               )}
+
               {!!images.length && (
                 <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
                   {images.map((src, idx) => (
@@ -1069,8 +1079,10 @@ export default function AttachListing() {
           </button>
         </div>
       </main>
+      <Footer />
     </div>
   );
+
 }
 
 function Bar({
