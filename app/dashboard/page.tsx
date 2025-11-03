@@ -38,7 +38,6 @@ export default function DashboardPage() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [listingToDelete, setListingToDelete] = useState<Listing | null>(null);
   const [deleting, setDeleting] = useState(false);
-  const [filter, setFilter] = useState<'all' | 'published'>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   useEffect(() => {
@@ -86,12 +85,9 @@ export default function DashboardPage() {
   };
 
   const filteredListings = listings.filter(listing => {
-    // Apply status filter
-    const statusMatch = filter === 'all' || listing.status === filter;
-    
     // Apply search filter if query exists
     if (!searchQuery.trim()) {
-      return statusMatch;
+      return true;
     }
     
     const query = searchQuery.toLowerCase().trim();
@@ -125,7 +121,7 @@ export default function DashboardPage() {
       ? queryWords.every(word => searchableText.includes(word))
       : searchableText.includes(query);
     
-    return statusMatch && matches;
+    return matches;
   });
 
   const stats = {
@@ -319,22 +315,6 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* Filters */}
-        <div className="mb-6 flex gap-2 overflow-x-auto pb-2">
-          {(['all', 'published'] as const).map((status) => (
-            <button
-              key={status}
-              onClick={() => setFilter(status)}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap ${
-                filter === status
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              {status.charAt(0).toUpperCase() + status.slice(1)}
-            </button>
-          ))}
-        </div>
 
         {/* Error Message */}
         {error && (
