@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, type ChangeEvent } from "react";
+import { toast } from "react-hot-toast";
+import { CheckCircle2, XCircle, AlertCircle } from "lucide-react";
 
 type SpecsState = {
   brand: string;
@@ -163,9 +165,8 @@ export default function NewComputerModal({
 
     return [
       s.brand &&
-        `Brand: ${s.brand}${
-          series ? ` (${series}${model ? ` ${model}` : ""})` : ""
-        }`,
+      `Brand: ${s.brand}${series ? ` (${series}${model ? ` ${model}` : ""})` : ""
+      }`,
       condition && `Condition: ${condition}`,
       cpuSummary && `CPU: ${cpuSummary}`,
       memSummary,
@@ -185,7 +186,15 @@ export default function NewComputerModal({
 
   const addAndClose = async () => {
     if (!uSpecs.brand) {
-      alert("Please select a Brand before saving");
+      toast.error("Please select a Brand before saving", {
+        icon: <AlertCircle className="w-5 h-5 text-yellow-600" />,
+      });
+      return;
+    }
+    if (uImages.length === 0) {
+      toast.error("Please upload at least 1 image before saving", {
+        icon: <AlertCircle className="w-5 h-5 text-yellow-600" />,
+      });
       return;
     }
     const specsString = buildSpecsString(uSpecs);
@@ -226,10 +235,14 @@ export default function NewComputerModal({
       });
 
       if (!ok) {
-        alert("❌ Failed to save listing. See console/network for details.");
+        toast.error("Failed to save listing. See console/network for details.", {
+          icon: <XCircle className="w-5 h-5 text-red-600" />,
+        });
         return; // keep modal open
       }
-      alert("✅ Listing saved");
+      toast.success("Listing saved", {
+        icon: <CheckCircle2 className="w-5 h-5 text-green-600" />,
+      });
       // reset on success
       setUPrice("");
       setUNegotiable(true);
@@ -259,7 +272,9 @@ export default function NewComputerModal({
       setBatteryCondition("");
       onClose();
     } catch (e: any) {
-      alert(`❌ Error: ${e?.message || "Unknown error"}`);
+      toast.error(e?.message || "Unknown error", {
+        icon: <XCircle className="w-5 h-5 text-red-600" />,
+      });
     } finally {
       setSaving(false);
     }
@@ -477,23 +492,23 @@ export default function NewComputerModal({
       `Condition: ${condition || "—"}`,
       batteryCondition && `Battery: ${batteryCondition}`,
       cpuBrand &&
-        `CPU: ${[cpuBrand, cpuSeries, cpuGeneration, cpuModel]
-          .filter(Boolean)
-          .join(" ")}`,
+      `CPU: ${[cpuBrand, cpuSeries, cpuGeneration, cpuModel]
+        .filter(Boolean)
+        .join(" ")}`,
       (ramType || ramCapacity) &&
-        `Memory: ${[ramType, ramCapacity].filter(Boolean).join(" ")}`,
+      `Memory: ${[ramType, ramCapacity].filter(Boolean).join(" ")}`,
       (storageTypeMain || storageCapacity) &&
-        `Storage: ${[storageTypeMain, storageCapacity]
-          .filter(Boolean)
-          .join(" ")}`,
+      `Storage: ${[storageTypeMain, storageCapacity]
+        .filter(Boolean)
+        .join(" ")}`,
       (screenSize || resolution || refreshRate) &&
-        `Display: ${[screenSize, resolution, refreshRate]
-          .filter(Boolean)
-          .join(" • ")}`,
+      `Display: ${[screenSize, resolution, refreshRate]
+        .filter(Boolean)
+        .join(" • ")}`,
       (gpuType || gpuBrand || gpuSeries || gpuVram) &&
-        `Graphics: ${[gpuType, gpuBrand, gpuSeries, gpuVram]
-          .filter(Boolean)
-          .join(" ")}`,
+      `Graphics: ${[gpuType, gpuBrand, gpuSeries, gpuVram]
+        .filter(Boolean)
+        .join(" ")}`,
       warranty && `Warranty: ${warranty}`,
       extraItems.length > 0 && `Notes: ${extraItems.join(", ")}`,
       `Price: ${uPrice ? `${uPrice} Birr` : "—"}`,
@@ -501,7 +516,9 @@ export default function NewComputerModal({
     post = `📦 ${title || "Laptop"}\n\n${parts.join("\n")}`;
     try {
       await navigator.clipboard.writeText(post);
-      alert("Post copied to clipboard");
+      toast.success("Post copied to clipboard", {
+        icon: <CheckCircle2 className="w-5 h-5 text-green-600" />,
+      });
     } catch {
       // fallback: no-op
     }
@@ -1010,19 +1027,19 @@ export default function NewComputerModal({
           </div>
           <div className="space-y-2 md:col-span-2">
             <label className="text-sm font-medium text-slate-700">
-              Images ({uImages.length}/{MAX_IMAGES} uploaded)
+              Images ({uImages.length}/{MAX_IMAGES} uploaded) <span className="text-red-500">*</span>
             </label>
             <input
               type="file"
               accept="image/*"
               capture="environment"
+              multiple
               onChange={handleImageUpload}
               disabled={uImages.length >= MAX_IMAGES}
-              className={`w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-700 file:mr-4 file:rounded-lg file:border-0 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white transition-all duration-200 ${
-                uImages.length >= MAX_IMAGES
-                  ? 'opacity-50 cursor-not-allowed file:bg-gray-400'
-                  : 'file:bg-black hover:file:bg-gray-700'
-              }`}
+              className={`w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-700 file:mr-4 file:rounded-lg file:border-0 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white transition-all duration-200 ${uImages.length >= MAX_IMAGES
+                ? 'opacity-50 cursor-not-allowed file:bg-gray-400'
+                : 'file:bg-black hover:file:bg-gray-700'
+                }`}
             />
             {uImages.length > 0 && (
               <div className="grid grid-cols-3 gap-3 mt-3">
@@ -1105,7 +1122,7 @@ export default function NewComputerModal({
             type="button"
             className="rounded-xl bg-black px-6 py-3 text-white font-medium hover:shadow-lg hover:scale-105 transition disabled:opacity-60 disabled:cursor-not-allowed"
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); addAndClose(); }}
-            disabled={!uSpecs.brand || saving}
+            disabled={!uSpecs.brand || uImages.length === 0 || saving}
           >
             <i className="fa-solid fa-plus mr-2" />
             {saving ? 'Saving…' : 'Add Device'}

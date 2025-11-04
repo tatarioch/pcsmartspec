@@ -8,8 +8,9 @@ import {
 } from "next/navigation";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-import { Camera } from "lucide-react";
+import { Camera, CheckCircle2, XCircle } from "lucide-react";
 import CameraCapture from "../com/CameraCapture";
+import { Toaster, toast } from "react-hot-toast";
 
 interface StorageItem {
   Model: string;
@@ -322,7 +323,6 @@ function AttachListingContent() {
   const [attached, setAttached] = useState<boolean>(false);
   const [attachedCount, setAttachedCount] = useState<number>(0);
   const [publishing, setPublishing] = useState<boolean>(false);
-  const [publishMessage, setPublishMessage] = useState<string | null>(null);
   const suggestions = useMemo(
     () => [
       "Backlit Keyboard",
@@ -510,11 +510,6 @@ function AttachListingContent() {
         </div>
       )}
       <main className="mx-auto max-w-6xl px-6 py-8 space-y-6">
-        {publishMessage && (
-          <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">
-            {publishMessage}
-          </div>
-        )}
         <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           <div className="rounded-xl border bg-white p-4 lg:col-span-2 xl:col-span-2">
             <div className="text-sm text-zinc-500">Model</div>
@@ -1036,7 +1031,6 @@ function AttachListingContent() {
             onClick={async () => {
               try {
                 setPublishing(true);
-                setPublishMessage(null);
                 const res = await fetch("/api/listings/publish", {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
@@ -1060,9 +1054,9 @@ function AttachListingContent() {
                   throw new Error(t || `Failed to publish: ${res.status}`);
                 }
                 const data = await res.json();
-                setPublishMessage(
-                  "✅ Listing published. It will now appear on the buyer page."
-                );
+                toast.success("Listing published. It will now appear on the buyer page.", {
+                  icon: <CheckCircle2 className="w-5 h-5 text-green-600" />,
+                });
 
                 // Reset page to waiting mode after successful publish
                 setScannerData(null);
@@ -1096,9 +1090,9 @@ function AttachListingContent() {
                   setRefreshTick((t) => t + 1);
                 }, 1000);
               } catch (e: any) {
-                setPublishMessage(
-                  `❌ ${e?.message || "Failed to publish listing"}`
-                );
+                toast.error(e?.message || "Failed to publish listing", {
+                  icon: <XCircle className="w-5 h-5 text-red-600" />,
+                });
               } finally {
                 setPublishing(false);
               }
@@ -1109,6 +1103,7 @@ function AttachListingContent() {
         </div>
       </main>
       <Footer />
+      <Toaster position="top-center" />
     </div>
   );
 

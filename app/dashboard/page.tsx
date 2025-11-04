@@ -7,6 +7,8 @@ import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import NewComputerModal, { type NewComputerData } from "../components/NewComputerModal";
 import EditListingModal from "../components/EditListingModal";
+import { Toaster, toast } from "react-hot-toast";
+import { CheckCircle2, XCircle } from "lucide-react";
 
 export type Listing = {
   id: string;
@@ -52,7 +54,7 @@ export default function DashboardPage() {
       // In a real app, you'd fetch /api/listings/my-listings or similar
       const res = await fetch('/api/listings', { cache: 'no-store' });
       if (!res.ok) throw new Error('Failed to load listings');
-      
+
       const data = await res.json();
       if (data.status === 'ok') {
         // Transform to internal format
@@ -89,10 +91,10 @@ export default function DashboardPage() {
     if (!searchQuery.trim()) {
       return true;
     }
-    
+
     const query = searchQuery.toLowerCase().trim();
     const queryWords = query.split(/\s+/).filter(word => word.length > 0);
-    
+
     // Build a comprehensive search text from all relevant fields
     const searchableText = [
       listing.brand || '',
@@ -115,12 +117,12 @@ export default function DashboardPage() {
       .map(field => field.toLowerCase())
       .join(' ')
       .trim();
-    
+
     // Check if all query words appear in the searchable text (supports multi-word search)
-    const matches = queryWords.length > 0 
+    const matches = queryWords.length > 0
       ? queryWords.every(word => searchableText.includes(word))
       : searchableText.includes(query);
-    
+
     return matches;
   });
 
@@ -169,20 +171,26 @@ export default function DashboardPage() {
 
       const text = await res.text();
       let json: any = null;
-      try { json = text ? JSON.parse(text) : null; } catch {}
+      try { json = text ? JSON.parse(text) : null; } catch { }
 
       if (!res.ok) {
-        alert(`❌ Save failed: ${res.status} ${res.statusText}`);
+        toast.error(`Save failed: ${res.status} ${res.statusText}`, {
+          icon: <XCircle className="w-5 h-5 text-red-600" />,
+        });
         return false;
       }
 
-      alert('✅ Listing published successfully!');
+      toast.success('Listing published successfully!', {
+        icon: <CheckCircle2 className="w-5 h-5 text-green-600" />,
+      });
       setUploadOpen(false);
       loadListings(); // Reload to show the new listing
       return true;
     } catch (err: any) {
       console.error('Error publishing listing:', err);
-      alert(`❌ Error: ${err?.message || 'Unknown error'}`);
+      toast.error(err?.message || 'Unknown error', {
+        icon: <XCircle className="w-5 h-5 text-red-600" />,
+      });
       return false;
     }
   };
@@ -198,16 +206,22 @@ export default function DashboardPage() {
       const result = await res.json();
 
       if (!res.ok || result.status !== 'ok') {
-        alert(`❌ Update failed: ${result.error || 'Unknown error'}`);
+        toast.error(result.error || 'Update failed', {
+          icon: <XCircle className="w-5 h-5 text-red-600" />,
+        });
         return false;
       }
 
-      alert('✅ Listing updated successfully!');
+      toast.success('Listing updated successfully!', {
+        icon: <CheckCircle2 className="w-5 h-5 text-green-600" />,
+      });
       loadListings(); // Reload to show the updated listing
       return true;
     } catch (err: any) {
       console.error('Error updating listing:', err);
-      alert(`❌ Error: ${err?.message || 'Unknown error'}`);
+      toast.error(err?.message || 'Unknown error', {
+        icon: <XCircle className="w-5 h-5 text-red-600" />,
+      });
       return false;
     }
   };
@@ -234,17 +248,24 @@ export default function DashboardPage() {
       const result = await res.json();
 
       if (!res.ok || result.status !== 'ok') {
-        alert(`❌ Delete failed: ${result.error || 'Unknown error'}`);
+        toast.error(result.error || 'Delete failed', {
+          icon: <XCircle className="w-5 h-5 text-red-600" />,
+        });
         return;
       }
 
       // Reload listings after successful delete
+      toast.success('Listing deleted successfully!', {
+        icon: <CheckCircle2 className="w-5 h-5 text-green-600" />,
+      });
       loadListings();
       setDeleteConfirmOpen(false);
       setListingToDelete(null);
     } catch (err: any) {
       console.error('Error deleting listing:', err);
-      alert(`❌ Error: ${err?.message || 'Unknown error'}`);
+      toast.error(err?.message || 'Unknown error', {
+        icon: <XCircle className="w-5 h-5 text-red-600" />,
+      });
     } finally {
       setDeleting(false);
     }
@@ -307,7 +328,7 @@ export default function DashboardPage() {
           </div>
           {searchQuery && (
             <p className="mt-2 text-sm text-gray-600">
-              {filteredListings.length === 0 
+              {filteredListings.length === 0
                 ? 'No listings found matching your search.'
                 : `Found ${filteredListings.length} listing${filteredListings.length === 1 ? '' : 's'} matching "${searchQuery}"`
               }
@@ -404,11 +425,10 @@ export default function DashboardPage() {
                   {/* Actions */}
                   <div className="flex items-center justify-between gap-2">
                     <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        listing.status === 'published'
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${listing.status === 'published'
                           ? 'bg-green-100 text-green-800'
                           : 'bg-gray-100 text-gray-800'
-                      }`}
+                        }`}
                     >
                       {listing.status === 'published' && '✓ Published'}
                       {listing.status !== 'published' && '—'}
@@ -433,7 +453,8 @@ export default function DashboardPage() {
                         Delete
                       </button>
                       <Link
-                        href={`/listings/${listing.id}`}
+                        href={`https://ropc.vercel.app/listings/${listing.id}`}
+                        target="_blank"
                         className="inline-flex items-center text-xs text-blue-600 hover:text-blue-700 font-medium"
                       >
                         View →
@@ -471,6 +492,7 @@ export default function DashboardPage() {
       </main>
 
       <Footer />
+      <Toaster position="top-center" />
 
       {/* New Listing Modal */}
       <NewComputerModal
@@ -507,7 +529,7 @@ export default function DashboardPage() {
                 </p>
               </div>
             </div>
-            
+
             <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
               <p className="text-sm font-medium text-gray-900">
                 {listingToDelete.brand} {listingToDelete.model}

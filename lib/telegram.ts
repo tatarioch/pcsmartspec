@@ -12,17 +12,17 @@ function formatChannelId(channelId: string): string {
   if (channelId.startsWith('@')) {
     return channelId;
   }
-  
+
   // If it already starts with -100, return as is (already formatted)
   if (channelId.startsWith('-100')) {
     return channelId;
   }
-  
+
   // If it's already negative (but not -100 prefix), return as is
   if (channelId.startsWith('-')) {
     return channelId;
   }
-  
+
   // If it's a positive numeric ID, add -100 prefix
   const numId = parseInt(channelId);
   if (!isNaN(numId) && numId > 0) {
@@ -32,7 +32,7 @@ function formatChannelId(channelId: string): string {
     console.log(`📱 Formatted group/channel ID: ${channelId} -> ${formattedId}`);
     return formattedId;
   }
-  
+
   // Return as is for other formats
   return channelId;
 }
@@ -52,7 +52,7 @@ async function tryChannelIds(channelIds: string[]): Promise<string | null> {
       });
 
       const data = await response.json();
-      
+
       if (data.ok) {
         console.log(`✅ Found working channel ID: ${channelId}`);
         return channelId;
@@ -74,7 +74,7 @@ let RESOLVED_CHANNEL_ID: string | null = null;
 // Debug logging
 if (TELEGRAM_BOT_TOKEN) {
   console.log(`📱 Telegram Bot configured for channel: ${TELEGRAM_CHANNEL_ID}`);
-  
+
   // Try to resolve the correct channel ID format
   if (TELEGRAM_CHANNEL_ID_RAW && !TELEGRAM_CHANNEL_ID_RAW.startsWith('@')) {
     // Try multiple formats
@@ -85,7 +85,7 @@ if (TELEGRAM_BOT_TOKEN) {
         `@tattariNET`,   // Username format
         String(numId),   // Raw numeric
       ];
-      
+
       // Note: We'll resolve this on first use since we can't await at module level
       console.log(`📱 Will try channel ID formats: ${formats.join(', ')}`);
     }
@@ -122,32 +122,32 @@ interface ListingData {
  */
 function formatSpecsMessage(listing: ListingData): string {
   const lines: string[] = [];
-  
+
   // Title and Price
   lines.push(`🖥️ <b>${listing.title || 'PC Listing'}</b>`);
-  
+
   if (listing.price) {
-    const priceStr = typeof listing.price === 'string' 
-      ? listing.price.replace(/[^\d]/g, '') 
+    const priceStr = typeof listing.price === 'string'
+      ? listing.price.replace(/[^\d]/g, '')
       : String(listing.price);
     if (priceStr) {
       lines.push(`💰 <b>Price:</b> ${parseInt(priceStr).toLocaleString()} ETB`);
     }
   }
-  
+
   lines.push(''); // Empty line
-  
+
   // Specs
   lines.push('📋 <b>Specifications:</b>');
-  
+
   if (listing.brand || listing.model) {
     lines.push(`🖥️ <b>Brand/Model:</b> ${[listing.brand, listing.model].filter(Boolean).join(' ')}`);
   }
-  
+
   if (listing.cpu) {
     lines.push(`⚙️ <b>CPU:</b> ${listing.cpu}`);
   }
-  
+
   if (listing.ram_gb) {
     const ramInfo = [
       `${listing.ram_gb}GB`,
@@ -156,7 +156,7 @@ function formatSpecsMessage(listing: ListingData): string {
     ].filter(Boolean).join(' ');
     lines.push(`💾 <b>RAM:</b> ${ramInfo}`);
   }
-  
+
   if (listing.storage && Array.isArray(listing.storage) && listing.storage.length > 0) {
     const storageInfo = listing.storage
       .map((s: any) => {
@@ -170,11 +170,11 @@ function formatSpecsMessage(listing: ListingData): string {
       lines.push(`💿 <b>Storage:</b> ${storageInfo}`);
     }
   }
-  
+
   if (listing.gpu) {
     lines.push(`🎮 <b>GPU:</b> ${listing.gpu}`);
   }
-  
+
   if (listing.display_resolution || listing.screen_size_inch) {
     const displayParts = [
       listing.display_resolution,
@@ -184,33 +184,33 @@ function formatSpecsMessage(listing: ListingData): string {
       lines.push(`🖥️ <b>Display:</b> ${displayParts.join(' (')}${listing.screen_size_inch ? ')' : ''}`);
     }
   }
-  
+
   if (listing.os) {
     lines.push(`💻 <b>OS:</b> ${listing.os}`);
   }
-  
+
   // Additional Info
   if (listing.condition || listing.battery || listing.negotiable !== null) {
     lines.push(''); // Empty line
     lines.push('ℹ️ <b>Additional Info:</b>');
-    
+
     if (listing.condition) {
       lines.push(`📦 <b>Condition:</b> ${listing.condition}`);
     }
-    
+
     if (listing.battery) {
       lines.push(`🔋 <b>Battery:</b> ${listing.battery}`);
     }
-    
+
     if (listing.negotiable !== null) {
       lines.push(`💬 <b>Price:</b> ${listing.negotiable ? 'Negotiable' : 'Fixed'}`);
     }
   }
-  
+
   if (listing.special_features && Array.isArray(listing.special_features) && listing.special_features.length > 0) {
     lines.push(`✨ <b>Special Features:</b> ${listing.special_features.join(', ')}`);
   }
-  
+
   if (listing.guarantee_months || listing.guarantee_provider) {
     const guaranteeInfo = [
       listing.guarantee_months ? `${listing.guarantee_months} months` : null,
@@ -220,7 +220,10 @@ function formatSpecsMessage(listing: ListingData): string {
       lines.push(`🛡️ <b>Guarantee:</b> ${guaranteeInfo}`);
     }
   }
-  
+  lines.push('--------------------------------'); // Empty line
+  lines.push(`📢 <b>check our website:</b> https://ropc.vercel.app`);
+  lines.push('--------------------------------'); // Empty line
+
   return lines.join('\n');
 }
 
@@ -251,7 +254,7 @@ async function sendPhoto(photoUrl: string, caption?: string): Promise<boolean> {
     });
 
     const data = await response.json();
-    
+
     if (!response.ok) {
       console.error('❌ Telegram API error:', data);
       console.error(`📱 Channel ID used: ${TELEGRAM_CHANNEL_ID}`);
@@ -300,7 +303,7 @@ async function sendMediaGroup(photoUrls: string[], caption?: string): Promise<bo
     });
 
     const data = await response.json();
-    
+
     if (!response.ok) {
       console.error('❌ Telegram API error:', data);
       console.error(`📱 Channel ID used: ${TELEGRAM_CHANNEL_ID}`);
@@ -339,7 +342,7 @@ async function sendMessage(text: string): Promise<boolean> {
     });
 
     const data = await response.json();
-    
+
     if (!response.ok) {
       console.error('❌ Telegram API error:', data);
       console.error(`📱 Channel ID used: ${TELEGRAM_CHANNEL_ID}`);
@@ -368,7 +371,7 @@ async function resolveChannelId(): Promise<string> {
 
   // Try multiple formats
   const formats: string[] = [];
-  
+
   if (TELEGRAM_CHANNEL_ID_RAW.startsWith('@')) {
     // If username provided, try that first
     formats.push(TELEGRAM_CHANNEL_ID_RAW);
@@ -387,7 +390,7 @@ async function resolveChannelId(): Promise<string> {
   }
 
   const resolvedId = await tryChannelIds(formats);
-  
+
   if (resolvedId) {
     RESOLVED_CHANNEL_ID = resolvedId;
     console.log(`✅ Resolved group/channel ID: ${resolvedId}`);
@@ -420,7 +423,7 @@ async function testChannelAccess(): Promise<boolean> {
     });
 
     const data = await response.json();
-    
+
     if (data.ok) {
       console.log(`✅ Bot can access channel: ${data.result.title || data.result.username || channelId}`);
       return true;
@@ -449,7 +452,7 @@ export async function sendListingToTelegram(listing: ListingData): Promise<boole
 
   try {
     // Test channel access first (only log, don't fail)
-    await testChannelAccess().catch(() => {});
+    await testChannelAccess().catch(() => { });
 
     const message = formatSpecsMessage(listing);
     const images = listing.images || [];
