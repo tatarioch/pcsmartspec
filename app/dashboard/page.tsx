@@ -426,8 +426,8 @@ export default function DashboardPage() {
                   <div className="flex items-center justify-between gap-2">
                     <span
                       className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${listing.status === 'published'
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-gray-100 text-gray-800'
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-gray-100 text-gray-800'
                         }`}
                     >
                       {listing.status === 'published' && '✓ Published'}
