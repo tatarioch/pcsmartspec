@@ -4,6 +4,7 @@ import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
+import { isAuthenticated } from "@/lib/auth/utils";
 
 interface Listing {
   id: string;
@@ -26,9 +27,19 @@ function GenerateReceiptContent() {
   const searchParams = useSearchParams();
   const listingId = searchParams.get("listingId");
 
+  const [authChecking, setAuthChecking] = useState(true);
   const [listing, setListing] = useState<Listing | null>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+
+  // Check authentication on mount
+  useEffect(() => {
+    if (!isAuthenticated()) {
+      router.push("/");
+      return;
+    }
+    setAuthChecking(false);
+  }, [router]);
 
   const [buyerName, setBuyerName] = useState("");
   const [buyerPhone, setBuyerPhone] = useState("");
@@ -156,6 +167,15 @@ function GenerateReceiptContent() {
       setGenerating(false);
     }
   };
+
+  // Show loading screen while checking authentication
+  if (authChecking) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

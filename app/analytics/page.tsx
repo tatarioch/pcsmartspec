@@ -2,6 +2,8 @@
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { isAuthenticated } from "@/lib/auth/utils";
 
 type Listing = {
   id: string;
@@ -22,16 +24,29 @@ type Receipt = {
 };
 
 export default function SalesAnalyticsPage() {
+  const router = useRouter();
+  const [authChecking, setAuthChecking] = useState(true);
   const [listings, setListings] = useState<Listing[]>([]);
   const [receipts, setReceipts] = useState<Receipt[]>([]);
   const [loading, setLoading] = useState(true);
   const [range, setRange] = useState<"week" | "3days" | "day">("week");
 
+  // Check authentication on mount
   useEffect(() => {
+    if (!isAuthenticated()) {
+      router.push("/");
+      return;
+    }
+    setAuthChecking(false);
+  }, [router]);
+
+  useEffect(() => {
+    if (!isAuthenticated()) return; // Don't fetch if not authenticated
+
     const fetchData = async () => {
       try {
         setLoading(true);
-        
+
         // Fetch listings
         const listingsRes = await fetch('/api/listings');
         if (listingsRes.ok) {
@@ -123,8 +138,8 @@ export default function SalesAnalyticsPage() {
     // Average listing price
     const avgListingPrice = publishedListings.length > 0
       ? Math.round(
-          publishedListings.reduce((sum, l) => sum + (l.price || 0), 0) / publishedListings.length
-        )
+        publishedListings.reduce((sum, l) => sum + (l.price || 0), 0) / publishedListings.length
+      )
       : 0;
 
     // Revenue per sale (average revenue per receipt)
@@ -184,6 +199,15 @@ export default function SalesAnalyticsPage() {
     }).format(price) + " ETB";
   };
 
+  // Show loading screen while checking authentication
+  if (authChecking) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-linear-to-br from-slate-50 to-slate-100 text-slate-900 flex flex-col">
       <Navbar />
@@ -200,17 +224,16 @@ export default function SalesAnalyticsPage() {
                 <p className="text-sm text-slate-500">Track your business performance and insights</p>
               </div>
             </div>
-            
+
             <div className="flex gap-2 bg-slate-100/80 rounded-2xl p-1.5">
               {(["week", "3days", "day"] as const).map((r) => (
                 <button
                   key={r}
                   onClick={() => setRange(r)}
-                  className={`px-4 py-2 text-sm font-medium rounded-xl transition-all duration-300 ${
-                    range === r 
-                      ? "bg-white text-slate-800 shadow-sm" 
-                      : "text-slate-600 hover:text-slate-800 hover:bg-white/50"
-                  }`}
+                  className={`px-4 py-2 text-sm font-medium rounded-xl transition-all duration-300 ${range === r
+                    ? "bg-white text-slate-800 shadow-sm"
+                    : "text-slate-600 hover:text-slate-800 hover:bg-white/50"
+                    }`}
                 >
                   {r === "week" ? "This Week" : r === "3days" ? "Last 3 Days" : "Today"}
                 </button>
@@ -338,11 +361,11 @@ export default function SalesAnalyticsPage() {
                     <div className="text-sm font-medium text-slate-700">Revenue Trend</div>
                   </div>
                   <div className="text-xs text-slate-600">
-                    {stats.totalRevenue > 1000000 
-                      ? "Strong revenue growth observed" 
-                      : stats.totalRevenue > 500000 
-                      ? "Steady revenue stream maintained" 
-                      : "Building revenue foundation"}
+                    {stats.totalRevenue > 1000000
+                      ? "Strong revenue growth observed"
+                      : stats.totalRevenue > 500000
+                        ? "Steady revenue stream maintained"
+                        : "Building revenue foundation"}
                   </div>
                 </div>
 
@@ -352,11 +375,11 @@ export default function SalesAnalyticsPage() {
                     <div className="text-sm font-medium text-slate-700">Sales Performance</div>
                   </div>
                   <div className="text-xs text-slate-600">
-                    {stats.totalReceipts > 50 
-                      ? "Great sales volume! Continue the momentum." 
-                      : stats.totalReceipts > 20 
-                      ? "Good sales activity. Keep it up!" 
-                      : "Focus on increasing sales volume."}
+                    {stats.totalReceipts > 50
+                      ? "Great sales volume! Continue the momentum."
+                      : stats.totalReceipts > 20
+                        ? "Good sales activity. Keep it up!"
+                        : "Focus on increasing sales volume."}
                   </div>
                 </div>
               </div>

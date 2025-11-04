@@ -9,6 +9,7 @@ import NewComputerModal, { type NewComputerData } from "../components/NewCompute
 import EditListingModal from "../components/EditListingModal";
 import { Toaster, toast } from "react-hot-toast";
 import { CheckCircle2, XCircle } from "lucide-react";
+import { isAuthenticated } from "@/lib/auth/utils";
 
 export type Listing = {
   id: string;
@@ -31,6 +32,7 @@ export type Listing = {
 
 export default function DashboardPage() {
   const router = useRouter();
+  const [authChecking, setAuthChecking] = useState(true);
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -42,9 +44,15 @@ export default function DashboardPage() {
   const [deleting, setDeleting] = useState(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
 
+  // Check authentication on mount
   useEffect(() => {
+    if (!isAuthenticated()) {
+      router.push("/");
+      return;
+    }
+    setAuthChecking(false);
     loadListings();
-  }, []);
+  }, [router]);
 
   const loadListings = async () => {
     try {
@@ -275,6 +283,15 @@ export default function DashboardPage() {
     setDeleteConfirmOpen(false);
     setListingToDelete(null);
   };
+
+  // Show loading screen while checking authentication
+  if (authChecking) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 text-slate-900 flex flex-col">

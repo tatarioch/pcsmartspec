@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import { isAuthenticated } from "@/lib/auth/utils";
 
 type Receipt = {
   id: string;
@@ -23,6 +24,7 @@ type Receipt = {
 
 export default function SoldPage() {
   const router = useRouter();
+  const [authChecking, setAuthChecking] = useState(true);
   const [receipts, setReceipts] = useState<Receipt[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
@@ -30,7 +32,18 @@ export default function SoldPage() {
   const [receiptToDelete, setReceiptToDelete] = useState<Receipt | null>(null);
   const [deleting, setDeleting] = useState(false);
 
+  // Check authentication on mount
   useEffect(() => {
+    if (!isAuthenticated()) {
+      router.push("/");
+      return;
+    }
+    setAuthChecking(false);
+  }, [router]);
+
+  useEffect(() => {
+    if (!isAuthenticated()) return; // Don't fetch if not authenticated
+
     const fetchReceipts = async () => {
       try {
         setLoading(true);
@@ -53,7 +66,7 @@ export default function SoldPage() {
 
   const filteredReceipts = useMemo(() => {
     if (!query.trim()) return receipts;
-    
+
     const searchLower = query.toLowerCase();
     return receipts.filter((receipt) => {
       return (
@@ -87,7 +100,7 @@ export default function SoldPage() {
 
   const getPCSpecs = (snapshot: any) => {
     if (!snapshot) return null;
-    
+
     // Handle both object and string formats
     if (typeof snapshot === 'string') {
       try {
@@ -98,20 +111,20 @@ export default function SoldPage() {
     }
 
     const parts: string[] = [];
-    
+
     if (snapshot.brand || snapshot.model) {
       parts.push(`${snapshot.brand || ''} ${snapshot.model || ''}`.trim());
     }
     if (snapshot.cpu) parts.push(`CPU: ${snapshot.cpu}`);
     if (snapshot.ram_gb) parts.push(`RAM: ${snapshot.ram_gb}GB`);
     if (snapshot.storage) {
-      const storage = typeof snapshot.storage === 'string' 
-        ? snapshot.storage 
+      const storage = typeof snapshot.storage === 'string'
+        ? snapshot.storage
         : JSON.stringify(snapshot.storage);
       parts.push(`Storage: ${storage}`);
     }
     if (snapshot.gpu) parts.push(`GPU: ${snapshot.gpu}`);
-    
+
     return parts.length > 0 ? parts.join(' • ') : 'PC Specs';
   };
 
@@ -151,10 +164,19 @@ export default function SoldPage() {
     }
   };
 
+  // Show loading screen while checking authentication
+  if (authChecking) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-linear-to-br from-slate-50 to-slate-100 text-slate-900 flex flex-col">
       <Navbar />
-      
+
       <main className="bg-zinc-50 text-zinc-900 flex-1 w-full max-w-7xl mx-auto px-4 py-8">
         {/* Header Section */}
         <section className="rounded-2xl border border-slate-200 bg-white/80 backdrop-blur-sm p-6 shadow-sm mb-6">
@@ -168,7 +190,7 @@ export default function SoldPage() {
                 <p className="text-sm text-slate-500">Track your sales and receipts</p>
               </div>
             </div>
-            
+
             {/* Quick Stats */}
             <div className="flex gap-4">
               <div className="text-center">
@@ -221,8 +243,8 @@ export default function SoldPage() {
                 {query ? "No receipts found" : "No sales yet"}
               </h3>
               <p className="text-sm text-slate-500 max-w-md mx-auto">
-                {query 
-                  ? "No receipts match your search criteria." 
+                {query
+                  ? "No receipts match your search criteria."
                   : "You haven't made any sales yet. Start by generating a receipt from the dashboard."}
               </p>
             </div>
@@ -288,7 +310,7 @@ export default function SoldPage() {
                           {formatPrice(receipt.purchase_price)}
                         </div>
                       </div>
-                      
+
                       <button
                         onClick={() => handleDeleteClick(receipt)}
                         className="inline-flex items-center gap-2 rounded-xl bg-red-50 px-3 py-1.5 text-xs font-medium text-red-600 transition-all duration-200 hover:bg-red-100 hover:scale-105"
@@ -297,7 +319,7 @@ export default function SoldPage() {
                         <i className="fa-solid fa-trash" />
                       </button>
                     </div>
-                    
+
                     <button
                       onClick={() => router.push(`/receipt/${receipt.id}`)}
                       className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-slate-100 px-4 py-2 text-xs font-medium text-slate-700 transition-all duration-200 hover:bg-slate-200 hover:scale-105"
@@ -326,7 +348,7 @@ export default function SoldPage() {
                     </span>
                   )}
                 </div>
-                
+
                 <div className="flex items-center gap-4">
                   <span className="font-medium text-slate-700">
                     Total Revenue: {formatPrice(totalRevenue)}
@@ -355,7 +377,7 @@ export default function SoldPage() {
                 </p>
               </div>
             </div>
-            
+
             <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
               <p className="text-sm font-medium text-gray-900">
                 Receipt #: {receiptToDelete.receipt_number}

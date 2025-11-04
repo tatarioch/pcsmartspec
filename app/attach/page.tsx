@@ -11,6 +11,7 @@ import Footer from "../components/Footer";
 import { Camera, CheckCircle2, XCircle } from "lucide-react";
 import CameraCapture from "../com/CameraCapture";
 import { Toaster, toast } from "react-hot-toast";
+import { isAuthenticated } from "@/lib/auth/utils";
 
 interface StorageItem {
   Model: string;
@@ -61,6 +62,7 @@ interface FormData {
 function AttachListingContent() {
   const router = useRouter();
   const searchParams = useSearchParams() as ReadonlyURLSearchParams;
+  const [authChecking, setAuthChecking] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [debugInfo, setDebugInfo] = useState<{
@@ -68,6 +70,15 @@ function AttachListingContent() {
     loadedAt?: string;
     data?: any;
   }>({});
+
+  // Check authentication on mount
+  useEffect(() => {
+    if (!isAuthenticated()) {
+      router.push("/");
+      return;
+    }
+    setAuthChecking(false);
+  }, [router]);
 
   const [formData, setFormData] = useState<FormData>({
     brand: "",
@@ -461,6 +472,15 @@ function AttachListingContent() {
             </div>
           </div>
         </div>
+      </div>
+    );
+  }
+
+  // Show loading screen while checking authentication
+  if (authChecking) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
       </div>
     );
   }

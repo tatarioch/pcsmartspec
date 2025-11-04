@@ -6,6 +6,7 @@ import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
+import { isAuthenticated } from "@/lib/auth/utils";
 
 interface Receipt {
     id: string;
@@ -27,9 +28,19 @@ export default function ReceiptViewPage() {
     const params = useParams();
     const receiptId = params.id as string;
 
+    const [authChecking, setAuthChecking] = useState(true);
     const [receipt, setReceipt] = useState<Receipt | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
+    // Check authentication on mount
+    useEffect(() => {
+        if (!isAuthenticated()) {
+            router.push("/");
+            return;
+        }
+        setAuthChecking(false);
+    }, [router]);
     const [savingPDF, setSavingPDF] = useState(false);
     const [pdfSuccess, setPdfSuccess] = useState(false);
     const [showFileNameDialog, setShowFileNameDialog] = useState(false);
@@ -386,6 +397,15 @@ export default function ReceiptViewPage() {
             day: "numeric",
         });
     };
+
+    // Show loading screen while checking authentication
+    if (authChecking) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+            </div>
+        );
+    }
 
     if (loading) {
         return (

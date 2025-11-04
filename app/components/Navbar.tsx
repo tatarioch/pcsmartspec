@@ -41,8 +41,17 @@ export default function Navbar() {
       : "text-gray-700 hover:text-gray-900 hover:bg-gray-100";
 
   const handleLogout = () => {
+    // Clear all auth data from both storages
+    localStorage.removeItem("rsc_user_id");
+    localStorage.removeItem("rsc_email");
+    localStorage.removeItem("rsc_authed");
     localStorage.removeItem("rsc_token");
+
+    sessionStorage.removeItem("rsc_user_id");
+    sessionStorage.removeItem("rsc_email");
+    sessionStorage.removeItem("rsc_authed");
     sessionStorage.removeItem("rsc_token");
+
     router.push("/");
   };
 
@@ -60,10 +69,10 @@ export default function Navbar() {
 
       <nav
         className={`fixed top-0 mb-12  left-0 w-full z-50 border-b p-2 transition-all duration-500 ${isOpen
-            ? "bg-white shadow-lg border-slate-200"
-            : isScrolled
-              ? "bg-white/95 backdrop-blur-xl shadow-lg border-slate-200/80"
-              : "bg-white/80 backdrop-blur-lg shadow-sm border-slate-200"
+          ? "bg-white shadow-lg border-slate-200"
+          : isScrolled
+            ? "bg-white/95 backdrop-blur-xl shadow-lg border-slate-200/80"
+            : "bg-white/80 backdrop-blur-lg shadow-sm border-slate-200"
           }`}
       >
 
@@ -120,8 +129,8 @@ export default function Navbar() {
         <div
           ref={mobileMenuRef}
           className={`md:hidden absolute left-auto right-0 top-full z-50 transition-all duration-300 ease-out bg-white border border-slate-200 shadow-xl w-[min(92vw,20rem)] ${isOpen
-              ? "opacity-100 pointer-events-auto translate-y-0"
-              : "opacity-0 pointer-events-none -translate-y-2"
+            ? "opacity-100 pointer-events-auto translate-y-0"
+            : "opacity-0 pointer-events-none -translate-y-2"
             }`}
         >
           <div className="flex flex-col gap-1 px-0 py-3">
